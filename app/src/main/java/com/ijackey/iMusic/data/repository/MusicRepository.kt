@@ -27,6 +27,8 @@ class MusicRepository @Inject constructor(
 ) {
     fun getAllSongs(): Flow<List<Song>> = songDao.getAllSongs()
     
+    suspend fun getAllSongsSync(): List<Song> = songDao.getAllSongsSync()
+    
     fun searchSongs(query: String): Flow<List<Song>> = songDao.searchSongs(query)
     
     suspend fun scanMusicFromDirectory(directoryPath: String) = withContext(Dispatchers.IO) {

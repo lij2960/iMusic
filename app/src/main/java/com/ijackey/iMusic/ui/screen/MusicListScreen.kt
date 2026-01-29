@@ -75,6 +75,32 @@ fun MusicListScreen(
             }
         )
         
+        // Play Control Buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = { viewModel.continueLastPlayback() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("继续播放")
+            }
+            
+            Button(
+                onClick = { viewModel.startFromBeginning() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("从头开始")
+            }
+        }
+        
         // Search Bar
         OutlinedTextField(
             value = searchQuery,

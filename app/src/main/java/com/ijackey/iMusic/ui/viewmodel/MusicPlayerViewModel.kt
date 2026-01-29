@@ -65,13 +65,6 @@ class MusicPlayerViewModel @Inject constructor(
     private val _currentEqualizerPreset = MutableStateFlow("正常")
     val currentEqualizerPreset: StateFlow<String> = _currentEqualizerPreset.asStateFlow()
     
-    // Online search states - removed
-    // private val _onlineSearchResults = MutableStateFlow<List<OnlineTrack>>(emptyList())
-    // val onlineSearchResults: StateFlow<List<OnlineTrack>> = _onlineSearchResults.asStateFlow()
-    
-    // private val _isSearching = MutableStateFlow(false)
-    // val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
-    
     val songs: StateFlow<List<Song>> = combine(
         musicRepository.getAllSongs(),
         sortOrder,
@@ -112,7 +105,6 @@ class MusicPlayerViewModel @Inject constructor(
     }
     
     private fun setupPlayer() {
-        // Configure audio attributes for high quality playback
         val audioAttributes = AudioAttributes.Builder()
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .setUsage(C.USAGE_MEDIA)
@@ -120,7 +112,6 @@ class MusicPlayerViewModel @Inject constructor(
         
         exoPlayer.setAudioAttributes(audioAttributes, true)
         
-        // Configure track selector for best audio quality
         val trackSelector = exoPlayer.trackSelector as? DefaultTrackSelector
         trackSelector?.let { selector ->
             selector.parameters = selector.buildUponParameters()
@@ -149,7 +140,6 @@ class MusicPlayerViewModel @Inject constructor(
                 when (playbackState) {
                     Player.STATE_ENDED -> handleSongEnd()
                     Player.STATE_IDLE -> {
-                        // Player is idle, might be due to error
                         android.util.Log.d("Player", "Player is idle")
                     }
                 }
@@ -157,17 +147,21 @@ class MusicPlayerViewModel @Inject constructor(
             
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 android.util.Log.e("Player", "Playback error: ${error.message}")
-                // Skip to next song on error
                 skipToNext()
             }
         })
         
-        // Update position periodically
         viewModelScope.launch {
             while (true) {
                 if (exoPlayer.isPlaying) {
                     _currentPosition.value = exoPlayer.currentPosition
                     _duration.value = exoPlayer.duration.takeIf { it > 0 } ?: 0L
+                    
+                    _currentSong.value?.let { song ->
+                        prefs.edit()
+                            .putLong("last_position", exoPlayer.currentPosition)
+                            .apply()
+                    }
                 }
                 kotlinx.coroutines.delay(1000)
             }
@@ -179,7 +173,6 @@ class MusicPlayerViewModel @Inject constructor(
             PlayMode.SEQUENTIAL -> skipToNext()
             PlayMode.SHUFFLE -> skipToNext()
             PlayMode.REPEAT_ONE -> {
-                // Repeat current song
                 exoPlayer.seekTo(0)
                 exoPlayer.play()
             }
@@ -300,7 +293,6 @@ class MusicPlayerViewModel @Inject constructor(
         return musicRepository.getLyricsForSong(song)
     }
     
-    // Online lyrics search only (no album art)
     fun searchOnlineLyrics(song: Song) {
         viewModelScope.launch {
             try {
@@ -310,7 +302,6 @@ class MusicPlayerViewModel @Inject constructor(
                 if (lyrics != null) {
                     android.util.Log.d("ViewModel", "Found lyrics, saving...")
                     musicRepository.saveLyricsForSong(song, lyrics)
-                    // 触发界面刷新 - 重新设置当前歌曲以更新歌词显示
                     val currentSongValue = _currentSong.value
                     if (currentSongValue?.id == song.id) {
                         _currentSong.value = currentSongValue.copy()
@@ -325,7 +316,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Online album art search only
     fun searchOnlineAlbumArt(song: Song) {
         viewModelScope.launch {
             try {
@@ -334,7 +324,6 @@ class MusicPlayerViewModel @Inject constructor(
                 
                 if (artPath != null) {
                     android.util.Log.d("ALBUM_ART", "Album art downloaded, updating UI")
-                    // Update current song if it matches
                     val currentSongValue = _currentSong.value
                     if (currentSongValue?.id == song.id) {
                         val updatedSong = currentSongValue.copy(albumArtPath = artPath)
@@ -350,7 +339,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Search multiple lyrics options
     fun searchMultipleLyrics(song: Song, onResult: (List<Pair<String, String>>) -> Unit) {
         viewModelScope.launch {
             try {
@@ -363,7 +351,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Search multiple album art options
     fun searchMultipleAlbumArt(song: Song, onResult: (List<Pair<String, String>>) -> Unit) {
         viewModelScope.launch {
             try {
@@ -376,21 +363,17 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Apply selected lyrics
     fun applySelectedLyrics(song: Song, lyrics: String) {
         viewModelScope.launch {
             musicRepository.saveLyricsForSong(song, lyrics)
-            // 强制触发界面刷新 - 创建新的对象实例
             val currentSongValue = _currentSong.value
             if (currentSongValue?.id == song.id) {
-                // 使用时间戳确保对象变化
                 _currentSong.value = null
                 _currentSong.value = currentSongValue.copy(dateAdded = System.currentTimeMillis())
             }
         }
     }
     
-    // Apply selected album art
     fun applySelectedAlbumArt(song: Song, imageUrl: String) {
         viewModelScope.launch {
             val artPath = musicRepository.downloadAlbumArt(song, imageUrl)
@@ -404,10 +387,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Online music search - removed
-    // fun searchOnlineMusic(query: String) { ... }
-    
-    // Download album art for song
     fun downloadAlbumArt(song: Song, imageUrl: String) {
         viewModelScope.launch {
             try {
@@ -415,7 +394,6 @@ class MusicPlayerViewModel @Inject constructor(
                 val artPath = musicRepository.downloadAlbumArt(song, imageUrl)
                 if (artPath != null) {
                     println("ViewModel: Download successful, updating UI")
-                    // Force refresh the current song to update UI
                     val currentSongValue = _currentSong.value
                     if (currentSongValue?.id == song.id) {
                         val updatedSong = currentSongValue.copy(albumArtPath = artPath)
@@ -432,7 +410,6 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
-    // Equalizer functions
     fun setEqualizerPreset(preset: EqualizerPreset) {
         _equalizerBands.value = preset.bands
         _currentEqualizerPreset.value = preset.name
@@ -461,7 +438,6 @@ class MusicPlayerViewModel @Inject constructor(
     
     private fun applyEqualizer(bands: List<Float>) {
         // Apply equalizer settings to ExoPlayer
-        // This is a simplified implementation
     }
     
     private fun saveEqualizerSettings() {
@@ -490,6 +466,7 @@ class MusicPlayerViewModel @Inject constructor(
         prefs.edit()
             .putString("last_song_id", song.id)
             .putString("last_song_path", song.path)
+            .putString("play_mode", _playMode.value.name)
             .putLong("last_position", exoPlayer.currentPosition)
             .apply()
     }
@@ -513,25 +490,64 @@ class MusicPlayerViewModel @Inject constructor(
         }
         
         if (lastSongPath != null) {
+            // 立即从数据库查找歌曲，不等待Flow
             viewModelScope.launch {
-                // 只收集一次，避免重复触发
-                val songList = songs.first()
-                val lastSong = songList.find { it.path == lastSongPath }
-                if (lastSong != null) {
-                    _currentSong.value = lastSong
-                    updateCurrentIndex(lastSong)
-                    val mediaItem = MediaItem.fromUri(lastSong.path)
-                    exoPlayer.setMediaItem(mediaItem)
-                    exoPlayer.prepare()
-                    exoPlayer.seekTo(lastPosition)
-                    // Don't auto-play, just prepare
+                try {
+                    val allSongs = musicRepository.getAllSongsSync()
+                    val lastSong = allSongs.find { it.path == lastSongPath }
+                    if (lastSong != null) {
+                        _currentSong.value = lastSong
+                        updateCurrentIndex(lastSong)
+                        val mediaItem = MediaItem.fromUri(lastSong.path)
+                        exoPlayer.setMediaItem(mediaItem)
+                        exoPlayer.prepare()
+                        exoPlayer.seekTo(lastPosition)
+                        android.util.Log.d("ViewModel", "Restored last song: ${lastSong.title} at position $lastPosition")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ViewModel", "Error loading last song: ${e.message}")
                 }
             }
         }
     }
     
+    fun continueLastPlayback() {
+        val lastSong = _currentSong.value
+        if (lastSong != null) {
+            if (!exoPlayer.isPlaying) {
+                exoPlayer.play()
+            }
+        } else {
+            val playlist = _playlist.value
+            if (playlist.isNotEmpty()) {
+                playSong(playlist[0])
+            }
+        }
+    }
+    
+    fun startFromBeginning() {
+        val playlist = _playlist.value
+        if (playlist.isNotEmpty()) {
+            setPlayMode(PlayMode.SEQUENTIAL)
+            playSong(playlist[0])
+        }
+    }
+    
+    fun saveCurrentState() {
+        _currentSong.value?.let { song ->
+            prefs.edit()
+                .putString("last_song_id", song.id)
+                .putString("last_song_path", song.path)
+                .putString("play_mode", _playMode.value.name)
+                .putLong("last_position", exoPlayer.currentPosition)
+                .apply()
+            android.util.Log.d("ViewModel", "Saved current state: ${song.title} at ${exoPlayer.currentPosition}")
+        }
+    }
+    
     override fun onCleared() {
         super.onCleared()
+        saveCurrentState()
         exoPlayer.release()
     }
 }

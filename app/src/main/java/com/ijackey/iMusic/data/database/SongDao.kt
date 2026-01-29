@@ -9,6 +9,9 @@ interface SongDao {
     @Query("SELECT * FROM songs ORDER BY dateAdded DESC")
     fun getAllSongs(): Flow<List<Song>>
     
+    @Query("SELECT * FROM songs ORDER BY dateAdded DESC")
+    suspend fun getAllSongsSync(): List<Song>
+    
     @Query("SELECT * FROM songs WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%'")
     fun searchSongs(query: String): Flow<List<Song>>
     

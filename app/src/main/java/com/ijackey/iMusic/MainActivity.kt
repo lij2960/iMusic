@@ -24,21 +24,37 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: MusicPlayerViewModel
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             IMusicTheme {
-                MusicPlayerApp()
+                viewModel = hiltViewModel()
+                MusicPlayerApp(viewModel)
             }
+        }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        if (::viewModel.isInitialized) {
+            viewModel.saveCurrentState()
+        }
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        if (::viewModel.isInitialized) {
+            viewModel.saveCurrentState()
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MusicPlayerApp() {
+fun MusicPlayerApp(viewModel: MusicPlayerViewModel) {
     val navController = rememberNavController()
-    val viewModel: MusicPlayerViewModel = hiltViewModel()
     
     Scaffold(
         bottomBar = {
