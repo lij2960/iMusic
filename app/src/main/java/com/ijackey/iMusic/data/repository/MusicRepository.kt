@@ -217,7 +217,7 @@ class MusicRepository @Inject constructor(
     // Online lyrics search
     suspend fun searchOnlineLyrics(title: String, artist: String): String? {
         return try {
-            val keywords = "$artist $title"
+            val keywords = "$title $artist"
             Log.d("MusicRepository", "API call: searching music for lyrics: $keywords")
             
             val searchResponse = musicSearchApi.searchMusic(keywords)
@@ -225,14 +225,11 @@ class MusicRepository @Inject constructor(
             
             if (searchResponse.isSuccessful) {
                 val songs = searchResponse.body()?.result?.songs
+                Log.d("MusicRepository", "Found ${songs?.size ?: 0} songs")
                 if (!songs.isNullOrEmpty()) {
                     val firstSong = songs[0]
                     val songId = firstSong.id
                     Log.d("MusicRepository", "Found song ID: $songId, getting lyrics...")
-                    
-                    // Log album art URL from search result
-                    val albumArtUrl = firstSong.album.artist.img1v1Url
-                    Log.d("ALBUM_ART", "Found album art URL in lyrics search: $albumArtUrl")
                     
                     val lyricsResponse = lyricsApi.getLyrics(songId)
                     Log.d("MusicRepository", "Lyrics API response code: ${lyricsResponse.code()}")
@@ -240,23 +237,23 @@ class MusicRepository @Inject constructor(
                     if (lyricsResponse.isSuccessful) {
                         val lyrics = lyricsResponse.body()?.lrc?.lyric
                         Log.d("MusicRepository", "Lyrics found: ${lyrics?.take(100)}...")
-                        lyrics
+                        return lyrics
                     } else {
                         Log.e("MusicRepository", "Lyrics API error: ${lyricsResponse.errorBody()?.string()}")
-                        null
+                        return null
                     }
                 } else {
                     Log.d("MusicRepository", "No songs found in search")
-                    null
+                    return null
                 }
             } else {
                 Log.e("MusicRepository", "Search API error: ${searchResponse.errorBody()?.string()}")
-                null
+                return null
             }
         } catch (e: Exception) {
             Log.e("MusicRepository", "Exception in searchOnlineLyrics: ${e.message}")
             e.printStackTrace()
-            null
+            return null
         }
     }
     
@@ -399,11 +396,11 @@ class MusicRepository @Inject constructor(
         }
     }
     
-    // Search lyrics and album art together
-    suspend fun searchLyricsAndAlbumArt(song: Song): Pair<String?, String?> {
+    // Search album art only
+    suspend fun searchOnlineAlbumArt(song: Song): String? {
         return try {
             val keywords = "${song.title} ${song.artist}"
-            Log.d("MusicRepository", "Searching lyrics and album art for: $keywords")
+            Log.d("MusicRepository", "Searching album art only for: $keywords")
             
             val searchResponse = musicSearchApi.searchMusic(keywords)
             Log.d("MusicRepository", "Search response code: ${searchResponse.code()}")
@@ -412,36 +409,92 @@ class MusicRepository @Inject constructor(
                 val songs = searchResponse.body()?.result?.songs
                 if (!songs.isNullOrEmpty()) {
                     val firstSong = songs[0]
-                    val songId = firstSong.id
                     val albumArtUrl = firstSong.album.artist.img1v1Url
                     
-                    Log.d("ALBUM_ART", "Song: ${firstSong.name} by ${firstSong.artists.firstOrNull()?.name}")
                     Log.d("ALBUM_ART", "Found album art URL: $albumArtUrl")
                     
-                    // Get lyrics
-                    val lyricsResponse = lyricsApi.getLyrics(songId)
-                    val lyrics = if (lyricsResponse.isSuccessful) {
-                        lyricsResponse.body()?.lrc?.lyric
-                    } else null
-                    
                     // Download album art if URL is available
-                    val artPath = if (!albumArtUrl.isNullOrEmpty()) {
+                    if (!albumArtUrl.isNullOrEmpty()) {
                         downloadAlbumArt(song, albumArtUrl)
-                    } else null
-                    
-                    Pair(lyrics, artPath)
+                    } else {
+                        Log.d("ALBUM_ART", "No album art URL found")
+                        null
+                    }
                 } else {
                     Log.d("MusicRepository", "No songs found")
-                    Pair(null, null)
+                    null
                 }
             } else {
                 Log.e("MusicRepository", "Search error: ${searchResponse.errorBody()?.string()}")
-                Pair(null, null)
+                null
             }
         } catch (e: Exception) {
             Log.e("MusicRepository", "Exception: ${e.message}")
             e.printStackTrace()
-            Pair(null, null)
+            null
+        }
+    }
+    
+    // Search multiple lyrics options
+    suspend fun searchMultipleLyrics(title: String, artist: String): List<Pair<String, String>> {
+        return try {
+            val keywords = "$title $artist"
+            Log.d("MusicRepository", "Searching multiple lyrics for: $keywords")
+            
+            val searchResponse = musicSearchApi.searchMusic(keywords, limit = 10)
+            if (searchResponse.isSuccessful) {
+                val songs = searchResponse.body()?.result?.songs ?: emptyList()
+                val lyricsOptions = mutableListOf<Pair<String, String>>()
+                
+                for (song in songs.take(5)) {
+                    try {
+                        val lyricsResponse = lyricsApi.getLyrics(song.id)
+                        if (lyricsResponse.isSuccessful) {
+                            val lyrics = lyricsResponse.body()?.lrc?.lyric
+                            if (!lyrics.isNullOrBlank()) {
+                                val displayName = "${song.name} - ${song.artists.firstOrNull()?.name ?: "Unknown"}"
+                                lyricsOptions.add(Pair(displayName, lyrics))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MusicRepository", "Error getting lyrics for song ${song.id}: ${e.message}")
+                    }
+                }
+                lyricsOptions
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("MusicRepository", "Exception in searchMultipleLyrics: ${e.message}")
+            emptyList()
+        }
+    }
+    
+    // Search multiple album art options
+    suspend fun searchMultipleAlbumArt(title: String, artist: String): List<Pair<String, String>> {
+        return try {
+            val keywords = "$title $artist"
+            Log.d("MusicRepository", "Searching multiple album art for: $keywords")
+            
+            val searchResponse = musicSearchApi.searchMusic(keywords, limit = 10)
+            if (searchResponse.isSuccessful) {
+                val songs = searchResponse.body()?.result?.songs ?: emptyList()
+                val artOptions = mutableListOf<Pair<String, String>>()
+                
+                for (song in songs.take(5)) {
+                    val albumArtUrl = song.album.artist.img1v1Url
+                    if (!albumArtUrl.isNullOrBlank()) {
+                        val displayName = "${song.name} - ${song.artists.firstOrNull()?.name ?: "Unknown"}"
+                        artOptions.add(Pair(displayName, albumArtUrl))
+                    }
+                }
+                artOptions
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("MusicRepository", "Exception in searchMultipleAlbumArt: ${e.message}")
+            emptyList()
         }
     }
 }

@@ -18,7 +18,6 @@ import com.ijackey.iMusic.ui.screen.PlayerScreen
 import com.ijackey.iMusic.ui.screen.DirectoryPickerScreen
 import com.ijackey.iMusic.ui.screen.LyricsScreen
 import com.ijackey.iMusic.ui.screen.EqualizerScreen
-import com.ijackey.iMusic.ui.screen.OnlineMusicScreen
 import com.ijackey.iMusic.ui.theme.IMusicTheme
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -70,14 +69,6 @@ fun MusicPlayerApp() {
                     selected = navController.currentDestination?.route == "directory_picker",
                     onClick = {
                         navController.navigate("directory_picker")
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    label = { Text("在线") },
-                    selected = navController.currentDestination?.route == "online_music",
-                    onClick = {
-                        navController.navigate("online_music")
                     }
                 )
             }
@@ -135,15 +126,6 @@ fun MusicPlayerApp() {
             
             composable("equalizer") {
                 EqualizerScreen(
-                    onBackClick = {
-                        navController.popBackStack()
-                    },
-                    viewModel = viewModel
-                )
-            }
-            
-            composable("online_music") {
-                OnlineMusicScreen(
                     onBackClick = {
                         navController.popBackStack()
                     },

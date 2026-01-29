@@ -65,12 +65,12 @@ class MusicPlayerViewModel @Inject constructor(
     private val _currentEqualizerPreset = MutableStateFlow("正常")
     val currentEqualizerPreset: StateFlow<String> = _currentEqualizerPreset.asStateFlow()
     
-    // Online search states
-    private val _onlineSearchResults = MutableStateFlow<List<OnlineTrack>>(emptyList())
-    val onlineSearchResults: StateFlow<List<OnlineTrack>> = _onlineSearchResults.asStateFlow()
+    // Online search states - removed
+    // private val _onlineSearchResults = MutableStateFlow<List<OnlineTrack>>(emptyList())
+    // val onlineSearchResults: StateFlow<List<OnlineTrack>> = _onlineSearchResults.asStateFlow()
     
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+    // private val _isSearching = MutableStateFlow(false)
+    // val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
     
     val songs: StateFlow<List<Song>> = combine(
         musicRepository.getAllSongs(),
@@ -146,9 +146,19 @@ class MusicPlayerViewModel @Inject constructor(
             }
             
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED) {
-                    handleSongEnd()
+                when (playbackState) {
+                    Player.STATE_ENDED -> handleSongEnd()
+                    Player.STATE_IDLE -> {
+                        // Player is idle, might be due to error
+                        android.util.Log.d("Player", "Player is idle")
+                    }
                 }
+            }
+            
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                android.util.Log.e("Player", "Playback error: ${error.message}")
+                // Skip to next song on error
+                skipToNext()
             }
         })
         
@@ -290,17 +300,32 @@ class MusicPlayerViewModel @Inject constructor(
         return musicRepository.getLyricsForSong(song)
     }
     
-    // Online lyrics search with album art
+    // Online lyrics search only (no album art)
     fun searchOnlineLyrics(song: Song) {
         viewModelScope.launch {
             try {
-                android.util.Log.d("ViewModel", "Searching lyrics and album art for: ${song.title} by ${song.artist}")
-                val (lyrics, artPath) = musicRepository.searchLyricsAndAlbumArt(song)
+                android.util.Log.d("ViewModel", "Searching lyrics only for: ${song.title} by ${song.artist}")
+                val lyrics = musicRepository.searchOnlineLyrics(song.title, song.artist)
                 
                 if (lyrics != null) {
                     android.util.Log.d("ViewModel", "Found lyrics, saving...")
                     musicRepository.saveLyricsForSong(song, lyrics)
+                } else {
+                    android.util.Log.d("ViewModel", "No lyrics found")
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error searching lyrics: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // Online album art search only
+    fun searchOnlineAlbumArt(song: Song) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("ViewModel", "Searching album art only for: ${song.title} by ${song.artist}")
+                val artPath = musicRepository.searchOnlineAlbumArt(song)
                 
                 if (artPath != null) {
                     android.util.Log.d("ALBUM_ART", "Album art downloaded, updating UI")
@@ -310,36 +335,18 @@ class MusicPlayerViewModel @Inject constructor(
                         val updatedSong = currentSongValue.copy(albumArtPath = artPath)
                         _currentSong.value = updatedSong
                     }
-                }
-                
-                if (lyrics == null && artPath == null) {
-                    android.util.Log.d("ViewModel", "No lyrics or album art found")
+                } else {
+                    android.util.Log.d("ViewModel", "No album art found")
                 }
             } catch (e: Exception) {
-                android.util.Log.e("ViewModel", "Error searching lyrics: ${e.message}")
+                android.util.Log.e("ViewModel", "Error searching album art: ${e.message}")
                 e.printStackTrace()
             }
         }
     }
     
-    // Online music search
-    fun searchOnlineMusic(query: String) {
-        viewModelScope.launch {
-            _isSearching.value = true
-            try {
-                println("Searching online music: $query")
-                val results = musicRepository.searchOnlineMusic(query)
-                println("Found ${results.size} results")
-                _onlineSearchResults.value = results
-            } catch (e: Exception) {
-                println("Error searching music: ${e.message}")
-                e.printStackTrace()
-                _onlineSearchResults.value = emptyList()
-            } finally {
-                _isSearching.value = false
-            }
-        }
-    }
+    // Online music search - removed
+    // fun searchOnlineMusic(query: String) { ... }
     
     // Download album art for song
     fun downloadAlbumArt(song: Song, imageUrl: String) {
@@ -448,17 +455,17 @@ class MusicPlayerViewModel @Inject constructor(
         
         if (lastSongPath != null) {
             viewModelScope.launch {
-                songs.collect { songList ->
-                    val lastSong = songList.find { it.path == lastSongPath }
-                    if (lastSong != null) {
-                        _currentSong.value = lastSong
-                        updateCurrentIndex(lastSong)
-                        val mediaItem = MediaItem.fromUri(lastSong.path)
-                        exoPlayer.setMediaItem(mediaItem)
-                        exoPlayer.prepare()
-                        exoPlayer.seekTo(lastPosition)
-                        // Don't auto-play, just prepare
-                    }
+                // 只收集一次，避免重复触发
+                val songList = songs.first()
+                val lastSong = songList.find { it.path == lastSongPath }
+                if (lastSong != null) {
+                    _currentSong.value = lastSong
+                    updateCurrentIndex(lastSong)
+                    val mediaItem = MediaItem.fromUri(lastSong.path)
+                    exoPlayer.setMediaItem(mediaItem)
+                    exoPlayer.prepare()
+                    exoPlayer.seekTo(lastPosition)
+                    // Don't auto-play, just prepare
                 }
             }
         }

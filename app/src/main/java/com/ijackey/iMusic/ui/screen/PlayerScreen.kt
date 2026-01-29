@@ -119,8 +119,8 @@ fun PlayerScreen(
                             TextButton(
                                 onClick = { 
                                     println("PlayerScreen: Searching album art for: ${song.artist} ${song.title}")
-                                    // Navigate to online search to find album art
-                                    viewModel.searchOnlineMusic("${song.artist} ${song.title}")
+                                    // Search for album art only
+                                    viewModel.searchOnlineAlbumArt(song)
                                 }
                             ) {
                                 Text("搜索封面")
@@ -286,14 +286,20 @@ fun PlayerScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Second row with lyrics and online search
+            // Second row with cover and lyrics update
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Lyrics Button
+                // Update Cover Button
                 Button(
-                    onClick = { onLyricsClick(song) }
+                    onClick = { 
+                        android.util.Log.d("PlayerScreen", "Update cover button clicked")
+                        currentSong?.let { currentPlayingSong ->
+                            android.util.Log.d("PlayerScreen", "Searching cover for: ${currentPlayingSong.title} by ${currentPlayingSong.artist}")
+                            viewModel.searchOnlineAlbumArt(currentPlayingSong)
+                        }
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -301,16 +307,15 @@ fun PlayerScreen(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("歌词")
+                    Text("更新封面")
                 }
                 
-                // Online Lyrics Search
+                // Update Lyrics Button
                 Button(
                     onClick = { 
-                        android.util.Log.d("PlayerScreen", "Search lyrics button clicked for: ${song.title} by ${song.artist}")
-                        // 确保搜索的是当前播放的歌曲
-                        val currentPlayingSong = viewModel.currentSong.value
-                        if (currentPlayingSong != null) {
+                        android.util.Log.d("PlayerScreen", "Update lyrics button clicked")
+                        currentSong?.let { currentPlayingSong ->
+                            android.util.Log.d("PlayerScreen", "Searching lyrics for: ${currentPlayingSong.title} by ${currentPlayingSong.artist}")
                             viewModel.searchOnlineLyrics(currentPlayingSong)
                         }
                     }
@@ -321,7 +326,7 @@ fun PlayerScreen(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("搜索歌词")
+                    Text("更新歌词")
                 }
             }
         } ?: run {
