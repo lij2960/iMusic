@@ -2,6 +2,7 @@ package com.ijackey.iMusic.di
 
 import com.ijackey.iMusic.data.api.LyricsApi
 import com.ijackey.iMusic.data.api.MusicSearchApi
+import com.ijackey.iMusic.data.api.FangpiApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,6 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import java.util.concurrent.TimeUnit
@@ -21,6 +23,10 @@ annotation class LyricsRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class MusicSearchRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class FangpiRetrofit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -64,6 +70,17 @@ object NetworkModule {
     
     @Provides
     @Singleton
+    @FangpiRetrofit
+    fun provideFangpiRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://www.fangpi.net/")
+            .client(okHttpClient)
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .build()
+    }
+    
+    @Provides
+    @Singleton
     fun provideLyricsApi(@LyricsRetrofit retrofit: Retrofit): LyricsApi {
         return retrofit.create(LyricsApi::class.java)
     }
@@ -72,5 +89,11 @@ object NetworkModule {
     @Singleton
     fun provideMusicSearchApi(@MusicSearchRetrofit retrofit: Retrofit): MusicSearchApi {
         return retrofit.create(MusicSearchApi::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFangpiApi(@FangpiRetrofit retrofit: Retrofit): FangpiApi {
+        return retrofit.create(FangpiApi::class.java)
     }
 }

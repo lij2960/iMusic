@@ -23,7 +23,8 @@ import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
 fun MusicListScreen(
     viewModel: MusicPlayerViewModel,
     onSongClick: (Song) -> Unit,
-    onLyricsClick: (Song) -> Unit
+    onLyricsClick: (Song) -> Unit,
+    onDeleteClick: (Song) -> Unit
 ) {
     val songs by viewModel.songs.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
@@ -32,6 +33,8 @@ fun MusicListScreen(
     val sortOrder by viewModel.sortOrder.collectAsState()
     
     var showSortMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var songToDelete by remember { mutableStateOf<Song?>(null) }
     val listState = rememberLazyListState()
     
     // 自动定位到当前播放歌曲
@@ -125,11 +128,29 @@ fun MusicListScreen(
                     isPlaying = isPlaying && song == currentSong,
                     onClick = { onSongClick(song) },
                     onLyricsClick = { onLyricsClick(song) },
+                    onDeleteClick = { 
+                        songToDelete = song
+                        showDeleteDialog = true
+                    },
                     hasLyrics = viewModel.getLyrics(song) != null
                 )
             }
         }
     }
+    
+    DeleteConfirmationDialog(
+        showDialog = showDeleteDialog,
+        songTitle = songToDelete?.title ?: "",
+        onConfirm = {
+            songToDelete?.let { onDeleteClick(it) }
+            showDeleteDialog = false
+            songToDelete = null
+        },
+        onDismiss = {
+            showDeleteDialog = false
+            songToDelete = null
+        }
+    )
 }
 
 @Composable
@@ -139,6 +160,7 @@ fun SongItem(
     isPlaying: Boolean,
     onClick: () -> Unit,
     onLyricsClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     hasLyrics: Boolean
 ) {
     Card(
@@ -209,14 +231,28 @@ fun SongItem(
                 )
             }
             
-            // Play indicator
-            if (isCurrentSong) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            // Play indicator and delete button
+            Row {
+                if (isCurrentSong) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "删除",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
     }
@@ -226,4 +262,31 @@ private fun formatDuration(duration: Long): String {
     val minutes = (duration / 1000) / 60
     val seconds = (duration / 1000) % 60
     return String.format("%d:%02d", minutes, seconds)
+}
+
+// Delete confirmation dialog
+@Composable
+fun DeleteConfirmationDialog(
+    showDialog: Boolean,
+    songTitle: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("删除歌曲") },
+            text = { Text("确定要删除《$songTitle》吗？此操作不可恢复。") },
+            confirmButton = {
+                TextButton(onClick = onConfirm) {
+                    Text("删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 }

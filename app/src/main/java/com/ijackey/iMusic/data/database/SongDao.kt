@@ -18,11 +18,11 @@ interface SongDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSongs(songs: List<Song>)
     
-    @Update
-    suspend fun updateSong(song: Song)
-    
     @Delete
     suspend fun deleteSong(song: Song)
+    
+    @Update
+    suspend fun updateSong(song: Song)
     
     @Query("DELETE FROM songs")
     suspend fun deleteAllSongs()

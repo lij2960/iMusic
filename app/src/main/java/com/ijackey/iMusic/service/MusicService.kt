@@ -36,14 +36,7 @@ class MusicService : MediaSessionService() {
         
         createNotificationChannel()
         
-        // Configure audio attributes for music playback
-        val audioAttributes = AudioAttributes.Builder()
-            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-            .setUsage(C.USAGE_MEDIA)
-            .build()
-        
-        exoPlayer.setAudioAttributes(audioAttributes, true)
-        
+        // ExoPlayer already configured with audio attributes in AppModule
         mediaSession = MediaSession.Builder(this, exoPlayer)
             .build()
     }

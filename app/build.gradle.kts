@@ -53,6 +53,12 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
     
+    // Additional ExoPlayer extensions for high-quality audio
+    implementation("androidx.media3:media3-decoder:1.2.0")
+    implementation("androidx.media3:media3-extractor:1.2.0")
+    implementation("androidx.media3:media3-datasource:1.2.0")
+    implementation("androidx.media3:media3-common:1.2.0")
+    
     // Room database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
@@ -73,6 +79,7 @@ dependencies {
     
     // Image loading for album art
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
     
     // Audio effects for equalizer
     implementation("androidx.media3:media3-effect:1.2.0")

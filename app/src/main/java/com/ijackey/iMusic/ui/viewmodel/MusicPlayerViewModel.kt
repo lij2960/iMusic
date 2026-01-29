@@ -14,8 +14,9 @@ import com.ijackey.iMusic.data.model.PlayMode
 import com.ijackey.iMusic.data.model.Song
 import com.ijackey.iMusic.data.model.SortOrder
 import com.ijackey.iMusic.data.model.EqualizerPreset
-import com.ijackey.iMusic.data.api.OnlineTrack
+import com.ijackey.iMusic.data.api.FangpiTrack
 import com.ijackey.iMusic.data.repository.MusicRepository
+import com.ijackey.iMusic.audio.AudioDiagnostics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -127,7 +128,16 @@ class MusicPlayerViewModel @Inject constructor(
             
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 mediaItem?.let { item ->
-                    val song = _playlist.value.find { it.path == item.localConfiguration?.uri.toString() }
+                    // 使用文件路径比较而不是URI字符串比较
+                    val itemUri = item.localConfiguration?.uri
+                    val song = _playlist.value.find { song ->
+                        try {
+                            val songUri = android.net.Uri.fromFile(java.io.File(song.path))
+                            songUri == itemUri
+                        } catch (e: Exception) {
+                            song.path == itemUri.toString()
+                        }
+                    }
                     _currentSong.value = song
                     song?.let { 
                         saveLastPlayedSong(it)
@@ -147,6 +157,24 @@ class MusicPlayerViewModel @Inject constructor(
             
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 android.util.Log.e("Player", "Playback error: ${error.message}")
+                android.util.Log.e("Player", "Error code: ${error.errorCode}")
+                android.util.Log.e("Player", "Cause: ${error.cause?.message}")
+                
+                // Diagnose the current song if there's an error
+                _currentSong.value?.let { song ->
+                    android.util.Log.e("Player", "Error playing: ${song.title} (${song.path})")
+                    val audioInfo = AudioDiagnostics.diagnoseAudioFile(song.path)
+                    AudioDiagnostics.logAudioFileInfo(audioInfo)
+                    
+                    if (audioInfo.issues.isNotEmpty()) {
+                        android.util.Log.e("Player", "File issues that may cause playback problems:")
+                        audioInfo.issues.forEach { issue ->
+                            android.util.Log.e("Player", "  - $issue")
+                        }
+                    }
+                }
+                
+                // Try to skip to next song
                 skipToNext()
             }
         })
@@ -192,7 +220,39 @@ class MusicPlayerViewModel @Inject constructor(
             _currentIndex.value = index
             _currentSong.value = song
             
-            val mediaItem = MediaItem.fromUri(song.path)
+            // Diagnose audio file for high-quality playback
+            val audioInfo = AudioDiagnostics.diagnoseAudioFile(song.path)
+            AudioDiagnostics.logAudioFileInfo(audioInfo)
+            
+            // Log issues if any
+            if (audioInfo.issues.isNotEmpty()) {
+                android.util.Log.w("Player", "Audio file issues detected for ${song.title}:")
+                audioInfo.issues.forEach { issue ->
+                    android.util.Log.w("Player", "  - $issue")
+                }
+            }
+            
+            // Apply recommended settings for high-quality files
+            if (audioInfo.isHighQuality || audioInfo.isLossless) {
+                android.util.Log.d("Player", "Applying high-quality settings for ${song.title}")
+                val trackSelector = exoPlayer.trackSelector as? DefaultTrackSelector
+                trackSelector?.let { selector ->
+                    selector.parameters = selector.buildUponParameters()
+                        .setMaxAudioBitrate(Int.MAX_VALUE)
+                        .setForceHighestSupportedBitrate(true)
+                        .setPreferredAudioLanguage(null)
+                        .build()
+                }
+            }
+            
+            // Fix URI creation to avoid fragment issues
+            val mediaItem = try {
+                MediaItem.fromUri(android.net.Uri.fromFile(java.io.File(song.path)))
+            } catch (e: Exception) {
+                android.util.Log.e("Player", "Error creating MediaItem from file: ${e.message}")
+                MediaItem.fromUri(song.path)
+            }
+            
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.prepare()
             exoPlayer.play()
@@ -410,6 +470,38 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
     
+    // Fangpi music search and download
+    fun searchFangpiMusic(keyword: String, onResult: (List<FangpiTrack>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val tracks = musicRepository.searchFangpiMusic(keyword)
+                onResult(tracks)
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error searching Fangpi music: ${e.message}")
+                onResult(emptyList())
+            }
+        }
+    }
+    
+    fun deleteSong(song: Song, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val success = musicRepository.deleteSong(song)
+                onResult(success)
+                if (success) {
+                    // If deleted song is currently playing, stop playback
+                    if (_currentSong.value?.id == song.id) {
+                        exoPlayer.stop()
+                        _currentSong.value = null
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error deleting song: ${e.message}")
+                onResult(false)
+            }
+        }
+    }
+    
     fun setEqualizerPreset(preset: EqualizerPreset) {
         _equalizerBands.value = preset.bands
         _currentEqualizerPreset.value = preset.name
@@ -498,7 +590,15 @@ class MusicPlayerViewModel @Inject constructor(
                     if (lastSong != null) {
                         _currentSong.value = lastSong
                         updateCurrentIndex(lastSong)
-                        val mediaItem = MediaItem.fromUri(lastSong.path)
+                        
+                        // Fix URI creation for last song restoration
+                        val mediaItem = try {
+                            MediaItem.fromUri(android.net.Uri.fromFile(java.io.File(lastSong.path)))
+                        } catch (e: Exception) {
+                            android.util.Log.e("ViewModel", "Error creating MediaItem for last song: ${e.message}")
+                            MediaItem.fromUri(lastSong.path)
+                        }
+                        
                         exoPlayer.setMediaItem(mediaItem)
                         exoPlayer.prepare()
                         exoPlayer.seekTo(lastPosition)
@@ -549,5 +649,20 @@ class MusicPlayerViewModel @Inject constructor(
         super.onCleared()
         saveCurrentState()
         exoPlayer.release()
+    }
+    
+    fun downloadFangpiMusic(track: FangpiTrack, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val success = musicRepository.downloadFangpiMusic(track)
+                onResult(success)
+                if (success) {
+                    scanMusic()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error downloading Fangpi music: ${e.message}")
+                onResult(false)
+            }
+        }
     }
 }

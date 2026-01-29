@@ -17,7 +17,7 @@ import com.ijackey.iMusic.ui.screen.MusicListScreen
 import com.ijackey.iMusic.ui.screen.PlayerScreen
 import com.ijackey.iMusic.ui.screen.DirectoryPickerScreen
 import com.ijackey.iMusic.ui.screen.LyricsScreen
-import com.ijackey.iMusic.ui.screen.EqualizerScreen
+import com.ijackey.iMusic.ui.screen.FangpiSearchScreen
 import com.ijackey.iMusic.ui.theme.IMusicTheme
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -87,6 +87,14 @@ fun MusicPlayerApp(viewModel: MusicPlayerViewModel) {
                         navController.navigate("directory_picker")
                     }
                 )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    label = { Text("放屁网") },
+                    selected = navController.currentDestination?.route == "fangpi_search",
+                    onClick = {
+                        navController.navigate("fangpi_search")
+                    }
+                )
             }
         }
     ) { paddingValues ->
@@ -104,6 +112,11 @@ fun MusicPlayerApp(viewModel: MusicPlayerViewModel) {
                     },
                     onLyricsClick = { song ->
                         navController.navigate("lyrics/${song.id}")
+                    },
+                    onDeleteClick = { song ->
+                        viewModel.deleteSong(song) { success ->
+                            // Handle delete result if needed
+                        }
                     }
                 )
             }
@@ -140,13 +153,8 @@ fun MusicPlayerApp(viewModel: MusicPlayerViewModel) {
                 )
             }
             
-            composable("equalizer") {
-                EqualizerScreen(
-                    onBackClick = {
-                        navController.popBackStack()
-                    },
-                    viewModel = viewModel
-                )
+            composable("fangpi_search") {
+                FangpiSearchScreen(viewModel = viewModel)
             }
         }
     }

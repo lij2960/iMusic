@@ -9,7 +9,10 @@ import com.ijackey.iMusic.data.database.SongDao
 import com.ijackey.iMusic.data.model.Song
 import com.ijackey.iMusic.data.api.LyricsApi
 import com.ijackey.iMusic.data.api.MusicSearchApi
+import com.ijackey.iMusic.data.api.FangpiApi
+import com.ijackey.iMusic.data.api.FangpiTrack
 import com.ijackey.iMusic.data.api.OnlineTrack
+import com.ijackey.iMusic.data.parser.FangpiParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -23,7 +26,8 @@ class MusicRepository @Inject constructor(
     private val songDao: SongDao,
     private val context: Context,
     private val lyricsApi: LyricsApi,
-    private val musicSearchApi: MusicSearchApi
+    private val musicSearchApi: MusicSearchApi,
+    private val fangpiApi: FangpiApi
 ) {
     fun getAllSongs(): Flow<List<Song>> = songDao.getAllSongs()
     
@@ -134,7 +138,10 @@ class MusicRepository @Inject constructor(
     }
     
     private fun isAudioFile(file: File): Boolean {
-        val audioExtensions = listOf("mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus")
+        val audioExtensions = listOf(
+            "mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus",
+            "mp4", "3gp", "amr", "awb", "wv", "ape", "dts", "ac3"
+        )
         return audioExtensions.any { file.extension.lowercase() == it }
     }
     
@@ -472,6 +479,136 @@ class MusicRepository @Inject constructor(
         }
     }
     
+    // Fangpi music search and download
+    suspend fun searchFangpiMusic(keyword: String): List<FangpiTrack> {
+        return try {
+            Log.d("MusicRepository", "Searching Fangpi music for: $keyword")
+            val encodedKeyword = FangpiParser.encodeKeyword(keyword)
+            val response = fangpiApi.searchMusic(encodedKeyword)
+            
+            if (response.isSuccessful) {
+                val html = response.body() ?: ""
+                val tracks = FangpiParser.parseSearchResults(html)
+                Log.d("MusicRepository", "Found ${tracks.size} Fangpi tracks")
+                tracks
+            } else {
+                Log.e("MusicRepository", "Fangpi search error: ${response.code()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("MusicRepository", "Exception in searchFangpiMusic: ${e.message}")
+            emptyList()
+        }
+    }
+    
+    suspend fun downloadFangpiMusic(track: FangpiTrack): Boolean {
+        return try {
+            Log.d("MusicRepository", "Getting download URL for: ${track.title}")
+            
+            // First get the music detail page to find download URL
+            val detailResponse = fangpiApi.getMusicDetail(track.id)
+            if (!detailResponse.isSuccessful) {
+                Log.e("MusicRepository", "Failed to get music detail")
+                return false
+            }
+            
+            val detailHtml = detailResponse.body() ?: ""
+            val downloadUrl = FangpiParser.parseDownloadUrl(detailHtml)
+            
+            if (downloadUrl == null) {
+                Log.e("MusicRepository", "No download URL found")
+                return false
+            }
+            
+            Log.d("MusicRepository", "Found download URL: $downloadUrl")
+            
+            // 如果是夸克网盘链接，尝试跳转到夸克浏览器
+            if (downloadUrl.contains("quark.cn") || downloadUrl.contains("pan.")) {
+                // 清理转义字符
+                val cleanUrl = downloadUrl.replace("\\/", "/")
+                Log.i("MusicRepository", "Quark pan link detected: $cleanUrl")
+                Log.i("MusicRepository", "Attempting to open in Quark browser...")
+                
+                try {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(cleanUrl))
+                    intent.setPackage("com.quark.browser") // 夸克浏览器包名
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    Log.i("MusicRepository", "Successfully opened Quark browser")
+                    return true // 成功跳转到夸克浏览器
+                } catch (e: Exception) {
+                    Log.w("MusicRepository", "Quark browser not found, trying default browser")
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(cleanUrl))
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        Log.i("MusicRepository", "Opened in default browser")
+                        return true // 成功跳转到默认浏览器
+                    } catch (e2: Exception) {
+                        Log.e("MusicRepository", "Failed to open browser: ${e2.message}")
+                        return false
+                    }
+                }
+            }
+            
+            // 其他直接下载链接的处理逻辑保持不变
+            val downloadResponse = fangpiApi.downloadMusic(downloadUrl)
+            if (!downloadResponse.isSuccessful) {
+                Log.e("MusicRepository", "Failed to download music")
+                return false
+            }
+            
+            val responseBody = downloadResponse.body()
+            if (responseBody == null) {
+                Log.e("MusicRepository", "Empty response body")
+                return false
+            }
+            
+            // Save to downloads directory
+            val downloadsDir = File(context.getExternalFilesDir(null), "downloads")
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+            
+            val fileName = "${track.title} - ${track.artist}.mp3"
+                .replace("[^a-zA-Z0-9\\u4e00-\\u9fa5\\s\\-_]".toRegex(), "")
+            val musicFile = File(downloadsDir, fileName)
+            
+            withContext(Dispatchers.IO) {
+                responseBody.byteStream().use { input ->
+                    musicFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+            
+            if (musicFile.exists() && musicFile.length() > 0) {
+                Log.d("MusicRepository", "Downloaded: ${musicFile.absolutePath}")
+                
+                // Add to database
+                val song = Song(
+                    id = musicFile.absolutePath.hashCode().toString(),
+                    title = track.title,
+                    artist = track.artist,
+                    album = "Downloaded",
+                    duration = 0L,
+                    path = musicFile.absolutePath,
+                    dateAdded = System.currentTimeMillis(),
+                    size = musicFile.length()
+                )
+                songDao.insertSongs(listOf(song))
+                
+                true
+            } else {
+                Log.e("MusicRepository", "Download failed - file empty")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("MusicRepository", "Exception in downloadFangpiMusic: ${e.message}")
+            false
+        }
+    }
+    
     // Search multiple album art options
     suspend fun searchMultipleAlbumArt(title: String, artist: String): List<Pair<String, String>> {
         return try {
@@ -497,6 +634,42 @@ class MusicRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("MusicRepository", "Exception in searchMultipleAlbumArt: ${e.message}")
             emptyList()
+        }
+    }
+    
+    suspend fun deleteSong(song: Song): Boolean {
+        return try {
+            // Delete from database
+            songDao.deleteSong(song)
+            
+            // Delete physical file
+            val file = File(song.path)
+            if (file.exists()) {
+                file.delete()
+            }
+            
+            // Delete associated files (lyrics, album art)
+            val musicFile = File(song.path)
+            val fileName = musicFile.nameWithoutExtension
+            
+            // Delete lyrics
+            val lyricsDir = File(context.filesDir, "lyrics")
+            val lyricsFile = File(lyricsDir, "$fileName.lrc")
+            if (lyricsFile.exists()) {
+                lyricsFile.delete()
+            }
+            
+            // Delete album art
+            val artDir = File(context.filesDir, "album_art")
+            val artFile = File(artDir, "$fileName.jpg")
+            if (artFile.exists()) {
+                artFile.delete()
+            }
+            
+            true
+        } catch (e: Exception) {
+            Log.e("MusicRepository", "Error deleting song: ${e.message}")
+            false
         }
     }
 }
