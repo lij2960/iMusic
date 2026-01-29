@@ -310,6 +310,11 @@ class MusicPlayerViewModel @Inject constructor(
                 if (lyrics != null) {
                     android.util.Log.d("ViewModel", "Found lyrics, saving...")
                     musicRepository.saveLyricsForSong(song, lyrics)
+                    // 触发界面刷新 - 重新设置当前歌曲以更新歌词显示
+                    val currentSongValue = _currentSong.value
+                    if (currentSongValue?.id == song.id) {
+                        _currentSong.value = currentSongValue.copy()
+                    }
                 } else {
                     android.util.Log.d("ViewModel", "No lyrics found")
                 }
@@ -341,6 +346,60 @@ class MusicPlayerViewModel @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("ViewModel", "Error searching album art: ${e.message}")
                 e.printStackTrace()
+            }
+        }
+    }
+    
+    // Search multiple lyrics options
+    fun searchMultipleLyrics(song: Song, onResult: (List<Pair<String, String>>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val options = musicRepository.searchMultipleLyrics(song.title, song.artist)
+                onResult(options)
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error searching multiple lyrics: ${e.message}")
+                onResult(emptyList())
+            }
+        }
+    }
+    
+    // Search multiple album art options
+    fun searchMultipleAlbumArt(song: Song, onResult: (List<Pair<String, String>>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val options = musicRepository.searchMultipleAlbumArt(song.title, song.artist)
+                onResult(options)
+            } catch (e: Exception) {
+                android.util.Log.e("ViewModel", "Error searching multiple album art: ${e.message}")
+                onResult(emptyList())
+            }
+        }
+    }
+    
+    // Apply selected lyrics
+    fun applySelectedLyrics(song: Song, lyrics: String) {
+        viewModelScope.launch {
+            musicRepository.saveLyricsForSong(song, lyrics)
+            // 强制触发界面刷新 - 创建新的对象实例
+            val currentSongValue = _currentSong.value
+            if (currentSongValue?.id == song.id) {
+                // 使用时间戳确保对象变化
+                _currentSong.value = null
+                _currentSong.value = currentSongValue.copy(dateAdded = System.currentTimeMillis())
+            }
+        }
+    }
+    
+    // Apply selected album art
+    fun applySelectedAlbumArt(song: Song, imageUrl: String) {
+        viewModelScope.launch {
+            val artPath = musicRepository.downloadAlbumArt(song, imageUrl)
+            if (artPath != null) {
+                val currentSongValue = _currentSong.value
+                if (currentSongValue?.id == song.id) {
+                    val updatedSong = currentSongValue.copy(albumArtPath = artPath)
+                    _currentSong.value = updatedSong
+                }
             }
         }
     }

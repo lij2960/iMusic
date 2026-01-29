@@ -2,6 +2,8 @@ package com.ijackey.iMusic.ui.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -31,6 +33,12 @@ fun PlayerScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
     val playMode by viewModel.playMode.collectAsState()
+    
+    // 选择对话框状态
+    var showLyricsDialog by remember { mutableStateOf(false) }
+    var showAlbumArtDialog by remember { mutableStateOf(false) }
+    var lyricsOptions by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    var albumArtOptions by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     
     // 获取歌词
     val lyrics by remember(currentSong) {
@@ -297,7 +305,17 @@ fun PlayerScreen(
                         android.util.Log.d("PlayerScreen", "Update cover button clicked")
                         currentSong?.let { currentPlayingSong ->
                             android.util.Log.d("PlayerScreen", "Searching cover for: ${currentPlayingSong.title} by ${currentPlayingSong.artist}")
-                            viewModel.searchOnlineAlbumArt(currentPlayingSong)
+                            viewModel.searchMultipleAlbumArt(currentPlayingSong) { options ->
+                                if (options.size > 1) {
+                                    albumArtOptions = options
+                                    showAlbumArtDialog = true
+                                } else if (options.size == 1) {
+                                    viewModel.applySelectedAlbumArt(currentPlayingSong, options[0].second)
+                                } else {
+                                    // 没有找到封面，使用原来的单个搜索
+                                    viewModel.searchOnlineAlbumArt(currentPlayingSong)
+                                }
+                            }
                         }
                     }
                 ) {
@@ -316,7 +334,17 @@ fun PlayerScreen(
                         android.util.Log.d("PlayerScreen", "Update lyrics button clicked")
                         currentSong?.let { currentPlayingSong ->
                             android.util.Log.d("PlayerScreen", "Searching lyrics for: ${currentPlayingSong.title} by ${currentPlayingSong.artist}")
-                            viewModel.searchOnlineLyrics(currentPlayingSong)
+                            viewModel.searchMultipleLyrics(currentPlayingSong) { options ->
+                                if (options.size > 1) {
+                                    lyricsOptions = options
+                                    showLyricsDialog = true
+                                } else if (options.size == 1) {
+                                    viewModel.applySelectedLyrics(currentPlayingSong, options[0].second)
+                                } else {
+                                    // 没有找到歌词，使用原来的单个搜索
+                                    viewModel.searchOnlineLyrics(currentPlayingSong)
+                                }
+                            }
                         }
                     }
                 ) {
@@ -353,6 +381,99 @@ fun PlayerScreen(
                 }
             }
         }
+    }
+    
+    // 歌词选择对话框
+    if (showLyricsDialog) {
+        AlertDialog(
+            onDismissRequest = { showLyricsDialog = false },
+            title = { Text("选择歌词") },
+            text = {
+                LazyColumn {
+                    items(lyricsOptions) { (displayName, lyrics) ->
+                        TextButton(
+                            onClick = {
+                                currentSong?.let { song ->
+                                    viewModel.applySelectedLyrics(song, lyrics)
+                                }
+                                showLyricsDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = displayName,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLyricsDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    
+    // 封面选择对话框
+    if (showAlbumArtDialog) {
+        AlertDialog(
+            onDismissRequest = { showAlbumArtDialog = false },
+            title = { Text("选择封面") },
+            text = {
+                LazyColumn {
+                    items(albumArtOptions) { (displayName, imageUrl) ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    currentSong?.let { song ->
+                                        viewModel.applySelectedAlbumArt(song, imageUrl)
+                                    }
+                                    showAlbumArtDialog = false
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // 封面预览图片
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = "Album Art Preview",
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                // 显示名称
+                                Text(
+                                    text = displayName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAlbumArtDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
