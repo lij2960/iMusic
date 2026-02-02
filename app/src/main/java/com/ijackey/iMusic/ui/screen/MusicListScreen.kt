@@ -115,15 +115,53 @@ fun MusicListScreen(
                 .padding(16.dp)
         )
         
+        // Songs Summary
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "共 ${songs.size} 首歌曲",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "总时长: ${formatTotalDuration(songs.sumOf { it.duration })}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        
         // Song List
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(songs) { song ->
+            items(songs.size) { index ->
+                val song = songs[index]
                 SongItem(
                     song = song,
+                    index = index + 1,
                     isCurrentSong = song == currentSong,
                     isPlaying = isPlaying && song == currentSong,
                     onClick = { onSongClick(song) },
@@ -156,6 +194,7 @@ fun MusicListScreen(
 @Composable
 fun SongItem(
     song: Song,
+    index: Int,
     isCurrentSong: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
@@ -173,18 +212,46 @@ fun SongItem(
                 MaterialTheme.colorScheme.primaryContainer 
             else 
                 MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isCurrentSong) 8.dp else 2.dp
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Song Index
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isCurrentSong && isPlaying) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text = index.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isCurrentSong) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             // Album Art
             Card(
-                modifier = Modifier.size(48.dp),
-                shape = MaterialTheme.shapes.small
+                modifier = Modifier.size(56.dp),
+                shape = MaterialTheme.shapes.medium
             ) {
                 if (song.albumArtPath != null || song.albumArt != null) {
                     coil.compose.AsyncImage(
@@ -195,13 +262,16 @@ fun SongItem(
                     )
                 } else {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.Star,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -214,7 +284,7 @@ fun SongItem(
             ) {
                 Text(
                     text = song.title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = if (isCurrentSong) 
@@ -222,8 +292,16 @@ fun SongItem(
                     else 
                         MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${song.artist} • ${formatDuration(song.duration)}",
+                    text = song.artist,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${formatDuration(song.duration)} • ${formatFileSize(song.size)}",
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -231,26 +309,33 @@ fun SongItem(
                 )
             }
             
-            // Play indicator and delete button
-            Row {
-                if (isCurrentSong) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+            // Action buttons
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (hasLyrics) {
+                    IconButton(
+                        onClick = onLyricsClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Face,
+                            contentDescription = "歌词",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
                 
                 IconButton(
                     onClick = onDeleteClick,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "删除",
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -262,6 +347,24 @@ private fun formatDuration(duration: Long): String {
     val minutes = (duration / 1000) / 60
     val seconds = (duration / 1000) % 60
     return String.format("%d:%02d", minutes, seconds)
+}
+
+private fun formatTotalDuration(totalDuration: Long): String {
+    val hours = (totalDuration / 1000) / 3600
+    val minutes = ((totalDuration / 1000) % 3600) / 60
+    return if (hours > 0) {
+        String.format("%d小时%d分钟", hours, minutes)
+    } else {
+        String.format("%d分钟", minutes)
+    }
+}
+
+private fun formatFileSize(size: Long): String {
+    return when {
+        size >= 1024 * 1024 -> String.format("%.1fMB", size / (1024.0 * 1024.0))
+        size >= 1024 -> String.format("%.1fKB", size / 1024.0)
+        else -> "${size}B"
+    }
 }
 
 // Delete confirmation dialog

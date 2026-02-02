@@ -95,10 +95,13 @@ fun PlayerScreen(
             
             Card(
                 modifier = Modifier
-                    .size(200.dp)
-                    .clip(CircleShape),
+                    .size(180.dp)
+                    .clip(MaterialTheme.shapes.large),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
                 )
             ) {
                 Box(
@@ -120,17 +123,22 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = null,
-                                modifier = Modifier.size(80.dp),
+                                modifier = Modifier.size(60.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(
+                            FilledTonalButton(
                                 onClick = { 
                                     println("PlayerScreen: Searching album art for: ${song.artist} ${song.title}")
-                                    // Search for album art only
                                     viewModel.searchOnlineAlbumArt(song)
                                 }
                             ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text("搜索封面")
                             }
                         }
@@ -138,47 +146,53 @@ fun PlayerScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Song Title and Artist
             Text(
                 text = song.title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = song.artist,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // 当前歌词显示
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(80.dp)
                     .clickable { onLyricsClick(song) },
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
                 )
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = currentLyricText,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 2,
@@ -187,7 +201,7 @@ fun PlayerScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Progress Bar
             Column {
@@ -216,79 +230,101 @@ fun PlayerScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             // Control Buttons
-            Row(
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 6.dp
+                )
             ) {
-                // Play Mode Button
-                IconButton(
-                    onClick = {
-                        val nextMode = when (playMode) {
-                            PlayMode.SEQUENTIAL -> PlayMode.SHUFFLE
-                            PlayMode.SHUFFLE -> PlayMode.REPEAT_ONE
-                            PlayMode.REPEAT_ONE -> PlayMode.SEQUENTIAL
-                        }
-                        viewModel.setPlayMode(nextMode)
-                    }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = when (playMode) {
-                            PlayMode.SEQUENTIAL -> Icons.Default.PlayArrow
-                            PlayMode.SHUFFLE -> Icons.Default.Star
-                            PlayMode.REPEAT_ONE -> Icons.Default.Refresh
+                    // Play Mode Button
+                    IconButton(
+                        onClick = {
+                            val nextMode = when (playMode) {
+                                PlayMode.SEQUENTIAL -> PlayMode.SHUFFLE
+                                PlayMode.SHUFFLE -> PlayMode.REPEAT_ONE
+                                PlayMode.REPEAT_ONE -> PlayMode.SEQUENTIAL
+                            }
+                            viewModel.setPlayMode(nextMode)
                         },
-                        contentDescription = "Play Mode",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                // Previous Button
-                IconButton(
-                    onClick = { viewModel.skipToPrevious() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Previous",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                
-                // Play/Pause Button
-                FloatingActionButton(
-                    onClick = { viewModel.playPause() },
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                
-                // Next Button
-                IconButton(
-                    onClick = { viewModel.skipToNext() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Next",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                
-                // Equalizer Button
-                IconButton(
-                    onClick = onEqualizerClick
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Equalizer",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = when (playMode) {
+                                PlayMode.SEQUENTIAL -> Icons.Default.PlayArrow
+                                PlayMode.SHUFFLE -> Icons.Default.Star
+                                PlayMode.REPEAT_ONE -> Icons.Default.Refresh
+                            },
+                            contentDescription = "Play Mode",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    
+                    // Previous Button
+                    IconButton(
+                        onClick = { viewModel.skipToPrevious() },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Previous",
+                            modifier = Modifier.size(36.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // Play/Pause Button
+                    FloatingActionButton(
+                        onClick = { viewModel.playPause() },
+                        modifier = Modifier.size(72.dp),
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    
+                    // Next Button
+                    IconButton(
+                        onClick = { viewModel.skipToNext() },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = "Next",
+                            modifier = Modifier.size(36.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // Equalizer Button
+                    IconButton(
+                        onClick = onEqualizerClick,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Equalizer",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
             }
             
@@ -296,11 +332,13 @@ fun PlayerScreen(
             
             // Second row with cover and lyrics update
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Update Cover Button
-                Button(
+                FilledTonalButton(
                     onClick = { 
                         android.util.Log.d("PlayerScreen", "Update cover button clicked")
                         currentSong?.let { currentPlayingSong ->
@@ -312,24 +350,24 @@ fun PlayerScreen(
                                 } else if (options.size == 1) {
                                     viewModel.applySelectedAlbumArt(currentPlayingSong, options[0].second)
                                 } else {
-                                    // 没有找到封面，使用原来的单个搜索
                                     viewModel.searchOnlineAlbumArt(currentPlayingSong)
                                 }
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("更新封面")
                 }
                 
                 // Update Lyrics Button
-                Button(
+                FilledTonalButton(
                     onClick = { 
                         android.util.Log.d("PlayerScreen", "Update lyrics button clicked")
                         currentSong?.let { currentPlayingSong ->
@@ -341,17 +379,17 @@ fun PlayerScreen(
                                 } else if (options.size == 1) {
                                     viewModel.applySelectedLyrics(currentPlayingSong, options[0].second)
                                 } else {
-                                    // 没有找到歌词，使用原来的单个搜索
                                     viewModel.searchOnlineLyrics(currentPlayingSong)
                                 }
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("更新歌词")

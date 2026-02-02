@@ -191,7 +191,7 @@ class MusicPlayerViewModel @Inject constructor(
                             .apply()
                     }
                 }
-                kotlinx.coroutines.delay(1000)
+                kotlinx.coroutines.delay(2000) // 增加更新间隔减少CPU使用
             }
         }
     }

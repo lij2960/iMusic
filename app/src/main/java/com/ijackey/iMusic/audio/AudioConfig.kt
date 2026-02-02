@@ -27,10 +27,10 @@ object AudioConfig {
         return DefaultLoadControl.Builder()
             .setAllocator(DefaultAllocator(true, 16))
             .setBufferDurationsMs(
-                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+                2000,  // 减少最小缓冲时间
+                8000,  // 减少最大缓冲时间
+                1000,  // 减少播放缓冲时间
+                2000   // 减少重新缓冲时间
             )
             .setTargetBufferBytes(-1)
             .setPrioritizeTimeOverSizeThresholds(true)
@@ -60,9 +60,9 @@ object AudioConfig {
      */
     fun getBufferSizeForQuality(fileSize: Long): Int {
         return when {
-            fileSize > 50 * 1024 * 1024 -> 8192 * 4 // Files > 50MB
-            fileSize > 20 * 1024 * 1024 -> 8192 * 2 // Files > 20MB
-            else -> 8192 // Default
+            fileSize > 50 * 1024 * 1024 -> 4096 * 2 // 减少大文件缓冲区
+            fileSize > 20 * 1024 * 1024 -> 4096
+            else -> 2048 // 减少默认缓冲区
         }
     }
 }
