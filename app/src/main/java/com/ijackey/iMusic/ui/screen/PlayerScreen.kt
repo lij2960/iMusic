@@ -16,7 +16,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.painterResource
+import com.ijackey.iMusic.R
 import coil.compose.AsyncImage
 import com.ijackey.iMusic.data.model.PlayMode
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
@@ -262,11 +263,13 @@ fun PlayerScreen(
                         modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
-                            imageVector = when (playMode) {
-                                PlayMode.SEQUENTIAL -> Icons.Default.PlayArrow
-                                PlayMode.SHUFFLE -> Icons.Default.Star
-                                PlayMode.REPEAT_ONE -> Icons.Default.Refresh
-                            },
+                            painter = painterResource(
+                                when (playMode) {
+                                    PlayMode.SEQUENTIAL -> R.drawable.ic_repeat
+                                    PlayMode.SHUFFLE -> R.drawable.ic_shuffle
+                                    PlayMode.REPEAT_ONE -> R.drawable.ic_repeat_one
+                                }
+                            ),
                             contentDescription = "Play Mode",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp)
@@ -279,7 +282,7 @@ fun PlayerScreen(
                         modifier = Modifier.size(56.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            painter = painterResource(R.drawable.ic_previous),
                             contentDescription = "Previous",
                             modifier = Modifier.size(36.dp),
                             tint = MaterialTheme.colorScheme.onSurface
@@ -293,7 +296,7 @@ fun PlayerScreen(
                         containerColor = MaterialTheme.colorScheme.primary
                     ) {
                         Icon(
-                            imageVector = if (isPlaying) Icons.Default.Clear else Icons.Default.PlayArrow,
+                            painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             modifier = Modifier.size(40.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
@@ -306,7 +309,7 @@ fun PlayerScreen(
                         modifier = Modifier.size(56.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            painter = painterResource(R.drawable.ic_next),
                             contentDescription = "Next",
                             modifier = Modifier.size(36.dp),
                             tint = MaterialTheme.colorScheme.onSurface
@@ -319,7 +322,7 @@ fun PlayerScreen(
                         modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Settings,
+                            painter = painterResource(R.drawable.ic_settings),
                             contentDescription = "Equalizer",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp)
