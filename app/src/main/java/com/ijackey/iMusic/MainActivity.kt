@@ -18,6 +18,7 @@ import com.ijackey.iMusic.ui.screen.PlayerScreen
 import com.ijackey.iMusic.ui.screen.DirectoryPickerScreen
 import com.ijackey.iMusic.ui.screen.LyricsScreen
 import com.ijackey.iMusic.ui.screen.FangpiSearchScreen
+import com.ijackey.iMusic.ui.screen.EqualizerScreen
 import com.ijackey.iMusic.ui.theme.IMusicTheme
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -155,6 +156,15 @@ fun MusicPlayerApp(viewModel: MusicPlayerViewModel) {
             
             composable("fangpi_search") {
                 FangpiSearchScreen(viewModel = viewModel)
+            }
+            
+            composable("equalizer") {
+                EqualizerScreen(
+                    viewModel = viewModel,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }
