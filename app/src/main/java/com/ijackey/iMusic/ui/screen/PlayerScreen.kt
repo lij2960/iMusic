@@ -25,9 +25,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import com.ijackey.iMusic.R
-import com.ijackey.iMusic.ui.components.CustomSlider
-import com.ijackey.iMusic.ui.components.SimpleProgressBar
-import com.ijackey.iMusic.ui.components.CustomProgressBar
+import com.ijackey.iMusic.ui.components.DraggableProgressBar
 import coil.compose.AsyncImage
 import com.ijackey.iMusic.data.model.PlayMode
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
@@ -208,14 +206,12 @@ fun PlayerScreen(
                     if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
                 }
                 
-                CustomProgressBar(
+                DraggableProgressBar(
                     progress = displayProgress,
                     onProgressChange = { progress ->
                         isDragging = true
                         dragProgress = progress
-                    },
-                    onProgressChangeFinished = {
-                        val seekPosition = (dragProgress * duration).toLong()
+                        val seekPosition = (progress * duration).toLong()
                         viewModel.seekTo(seekPosition)
                         lastSeekTime = System.currentTimeMillis()
                         isDragging = false

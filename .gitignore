@@ -19,6 +19,11 @@ out/
 .gradle/
 build/
 
+# Kotlin
+.kotlin/
+*.kotlin_module
+*.kotlin_builtins
+
 # Local configuration file
 local.properties
 
@@ -51,6 +56,9 @@ captures/
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
+.idea/deploymentTargetDropDown.xml
+.idea/render.experimental.xml
+.idea/migrations.xml
 
 # Keystore files
 *.jks
@@ -58,6 +66,7 @@ captures/
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
+.cxx
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
@@ -82,3 +91,19 @@ proguard/
 
 # Android Profiling
 *.hprof
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

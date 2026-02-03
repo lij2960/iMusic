@@ -18,8 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ijackey.iMusic.data.model.EqualizerPresets
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
-import com.ijackey.iMusic.ui.components.CustomSlider
-import com.ijackey.iMusic.ui.components.SimpleSlider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

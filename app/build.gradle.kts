@@ -14,16 +14,26 @@ android {
         applicationId = "com.ijackey.iMusic"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    
+    signingConfigs {
+        create("release") {
+            keyAlias = "imusic"
+            keyPassword = "lij2572480"
+            storeFile = file("imusic-release-key.jks")
+            storePassword = "lij2572480"
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
