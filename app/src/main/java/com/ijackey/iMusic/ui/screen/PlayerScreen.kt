@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -123,12 +124,13 @@ fun PlayerScreen(
                             model = albumArtPath,
                             contentDescription = "Album Art",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Crop,
+                            error = painterResource(R.drawable.default_album_art)
                         )
                     } else {
                         // 使用应用图标作为默认封面
-                        AsyncImage(
-                            model = R.drawable.default_album_art,
+                        androidx.compose.foundation.Image(
+                            painter = painterResource(R.drawable.default_album_art),
                             contentDescription = "Default Album Art",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
