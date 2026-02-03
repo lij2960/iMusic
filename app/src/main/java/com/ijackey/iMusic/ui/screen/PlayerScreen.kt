@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,8 +18,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import com.ijackey.iMusic.R
+import com.ijackey.iMusic.ui.components.CustomSlider
+import com.ijackey.iMusic.ui.components.SimpleProgressBar
+import com.ijackey.iMusic.ui.components.CustomProgressBar
 import coil.compose.AsyncImage
 import com.ijackey.iMusic.data.model.PlayMode
 import com.ijackey.iMusic.ui.viewmodel.MusicPlayerViewModel
@@ -207,25 +215,29 @@ fun PlayerScreen(
             
             // Progress Bar
             Column {
-                Slider(
-                    value = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f,
-                    onValueChange = { progress ->
-                        viewModel.seekTo((progress * duration).toLong())
+                var isDragging by remember { mutableStateOf(false) }
+                var dragProgress by remember { mutableStateOf(0f) }
+                var lastSeekTime by remember { mutableStateOf(0L) }
+                
+                val displayProgress = if (isDragging || (System.currentTimeMillis() - lastSeekTime < 500)) {
+                    dragProgress
+                } else {
+                    if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+                }
+                
+                CustomProgressBar(
+                    progress = displayProgress,
+                    onProgressChange = { progress ->
+                        isDragging = true
+                        dragProgress = progress
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.outline
-                    ),
-                    thumb = {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                    }
+                    onProgressChangeFinished = {
+                        val seekPosition = (dragProgress * duration).toLong()
+                        viewModel.seekTo(seekPosition)
+                        lastSeekTime = System.currentTimeMillis()
+                        isDragging = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 
                 Row(
@@ -233,7 +245,11 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = formatTime(currentPosition),
+                        text = if (isDragging || (System.currentTimeMillis() - lastSeekTime < 500)) {
+                            formatTime((dragProgress * duration).toLong())
+                        } else {
+                            formatTime(currentPosition)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
