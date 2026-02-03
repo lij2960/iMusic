@@ -14,12 +14,11 @@ fi
 
 # 清理项目
 echo "🧹 清理项目..."
-./gradlew clean
+./gradlew clean --quiet
 
 # 检查清理是否成功
 if [ $? -ne 0 ]; then
-    echo "❌ 清理失败"
-    exit 1
+    echo "⚠️  清理遇到问题，继续构建...
 fi
 
 # 构建项目
