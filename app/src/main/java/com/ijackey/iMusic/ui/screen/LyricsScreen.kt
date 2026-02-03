@@ -1,6 +1,7 @@
 package com.ijackey.iMusic.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -180,39 +181,26 @@ fun LyricLineItem(
         MaterialTheme.colorScheme.onSurface
     }
     
-    val backgroundColor = if (isCurrentLine) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-    } else {
-        Color.Transparent
-    }
-    
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(alpha),
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
-        elevation = if (isCurrentLine) CardDefaults.cardElevation(defaultElevation = 4.dp) else CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .alpha(alpha)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
     ) {
-        Box(
+        Text(
+            text = lyric.text,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = if (isCurrentLine) 18.sp else 16.sp,
+                fontWeight = if (isCurrentLine) FontWeight.Bold else FontWeight.Normal
+            ),
+            color = textColor,
+            textAlign = TextAlign.Center,
+            lineHeight = 24.sp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = lyric.text,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = if (isCurrentLine) 18.sp else 16.sp,
-                    fontWeight = if (isCurrentLine) FontWeight.Bold else FontWeight.Normal
-                ),
-                color = textColor,
-                textAlign = TextAlign.Center,
-                lineHeight = 24.sp
-            )
-        }
+                .padding(vertical = 12.dp, horizontal = 16.dp)
+        )
     }
 }
 

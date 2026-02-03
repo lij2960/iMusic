@@ -191,7 +191,7 @@ class MusicPlayerViewModel @Inject constructor(
                             .apply()
                     }
                 }
-                kotlinx.coroutines.delay(2000) // 增加更新间隔减少CPU使用
+                kotlinx.coroutines.delay(100) // 缩短更新间隔以实现流畅的歌词同步
             }
         }
     }

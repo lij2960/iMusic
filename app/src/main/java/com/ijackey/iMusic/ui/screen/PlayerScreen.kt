@@ -126,32 +126,13 @@ fun PlayerScreen(
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        // Show placeholder and search button
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(60.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            FilledTonalButton(
-                                onClick = { 
-                                    println("PlayerScreen: Searching album art for: ${song.artist} ${song.title}")
-                                    viewModel.searchOnlineAlbumArt(song)
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Default.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("搜索封面")
-                            }
-                        }
+                        // 使用应用图标作为默认封面
+                        AsyncImage(
+                            model = R.drawable.default_album_art,
+                            contentDescription = "Default Album Art",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                     }
                 }
             }

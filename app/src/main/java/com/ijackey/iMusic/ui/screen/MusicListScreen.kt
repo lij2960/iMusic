@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ijackey.iMusic.R
 import com.ijackey.iMusic.data.model.PlayMode
 import com.ijackey.iMusic.data.model.Song
 import com.ijackey.iMusic.data.model.SortOrder
@@ -258,22 +260,17 @@ fun SongItem(
                         model = song.albumArtPath ?: song.albumArt,
                         contentDescription = "Album Art",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        error = painterResource(R.drawable.default_album_art)
                     )
                 } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    // 使用应用图标作为默认封面
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(R.drawable.default_album_art),
+                        contentDescription = "Default Album Art",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
                 }
             }
             
