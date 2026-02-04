@@ -245,12 +245,24 @@ class MusicPlayerViewModel @Inject constructor(
                 }
             }
             
-            // Fix URI creation to avoid fragment issues
+            // Create MediaItem with metadata for notification
+            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                .setTitle(song.title)
+                .setArtist(song.artist)
+                .setArtworkUri(song.albumArtPath?.let { android.net.Uri.parse(it) })
+                .build()
+            
             val mediaItem = try {
-                MediaItem.fromUri(android.net.Uri.fromFile(java.io.File(song.path)))
+                androidx.media3.common.MediaItem.Builder()
+                    .setUri(android.net.Uri.fromFile(java.io.File(song.path)))
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
             } catch (e: Exception) {
                 android.util.Log.e("Player", "Error creating MediaItem from file: ${e.message}")
-                MediaItem.fromUri(song.path)
+                androidx.media3.common.MediaItem.Builder()
+                    .setUri(song.path)
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
             }
             
             exoPlayer.setMediaItem(mediaItem)

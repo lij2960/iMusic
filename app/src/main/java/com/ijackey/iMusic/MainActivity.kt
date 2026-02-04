@@ -1,5 +1,6 @@
 package com.ijackey.iMusic
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ijackey.iMusic.service.MusicService
 import com.ijackey.iMusic.ui.screen.MusicListScreen
 import com.ijackey.iMusic.ui.screen.PlayerScreen
 import com.ijackey.iMusic.ui.screen.DirectoryPickerScreen
@@ -29,6 +31,11 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Start music service
+        val serviceIntent = Intent(this, MusicService::class.java)
+        startForegroundService(serviceIntent)
+        
         setContent {
             IMusicTheme {
                 viewModel = hiltViewModel()
