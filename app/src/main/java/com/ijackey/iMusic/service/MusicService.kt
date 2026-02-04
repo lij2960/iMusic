@@ -42,10 +42,38 @@ class MusicService : MediaSessionService() {
         
         createNotificationChannel()
         
+        // 立即启动前台服务
+        startForegroundService()
+        
         mediaSession = MediaSession.Builder(this, exoPlayer)
             .build()
             
         setupPlayerNotificationManager()
+    }
+    
+    private fun startForegroundService() {
+        val notification = createInitialNotification()
+        startForeground(NOTIFICATION_ID, notification)
+    }
+    
+    private fun createInitialNotification(): Notification {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("iMusic")
+            .setContentText("音乐服务已启动")
+            .setSmallIcon(R.drawable.ic_music_note)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
     }
     
     private fun setupPlayerNotificationManager() {

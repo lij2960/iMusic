@@ -10,27 +10,52 @@ object FangpiParser {
         val tracks = mutableListOf<FangpiTrack>()
         
         try {
-            // 使用正则表达式解析音乐链接
-            val musicLinkPattern = Pattern.compile(
-                "<a href=\"/music/(\\d+)\"[^>]*class=\"music-link[^>]*>.*?" +
-                "<span[^>]*>(.*?)</span>.*?" +
-                "<small[^>]*text-jade[^>]*>(.*?)</small>",
-                Pattern.DOTALL
+            android.util.Log.d("FangpiParser", "Parsing HTML length: ${html.length}")
+            
+            // 更新的正则表达式，适应新的页面结构
+            val patterns = listOf(
+                // 模式1: 原有格式
+                Pattern.compile(
+                    "<a href=\"/music/(\\d+)\"[^>]*class=\"music-link[^>]*>.*?" +
+                    "<span[^>]*>(.*?)</span>.*?" +
+                    "<small[^>]*text-jade[^>]*>(.*?)</small>",
+                    Pattern.DOTALL
+                ),
+                // 模式2: 新格式
+                Pattern.compile(
+                    "<a[^>]*href=\"/music/(\\d+)\"[^>]*>.*?" +
+                    "<div[^>]*class=\"[^\"]*title[^\"]*\"[^>]*>(.*?)</div>.*?" +
+                    "<div[^>]*class=\"[^\"]*artist[^\"]*\"[^>]*>(.*?)</div>",
+                    Pattern.DOTALL
+                ),
+                // 模式3: 简化格式
+                Pattern.compile(
+                    "href=\"/music/(\\d+)\"[^>]*>([^<]+)</a>[^<]*<[^>]*>([^<]+)",
+                    Pattern.DOTALL
+                )
             )
             
-            val matcher = musicLinkPattern.matcher(html)
-            while (matcher.find()) {
-                val id = matcher.group(1)
-                val title = matcher.group(2).trim()
-                val artist = matcher.group(3).trim()
-                
-                tracks.add(FangpiTrack(
-                    id = id,
-                    title = title,
-                    artist = artist,
-                    detailUrl = "https://www.fangpi.net/music/$id"
-                ))
+            for (pattern in patterns) {
+                val matcher = pattern.matcher(html)
+                while (matcher.find()) {
+                    val id = matcher.group(1)?.trim()
+                    val title = matcher.group(2)?.trim()?.replace("<[^>]+>".toRegex(), "")
+                    val artist = matcher.group(3)?.trim()?.replace("<[^>]+>".toRegex(), "")
+                    
+                    if (!id.isNullOrEmpty() && !title.isNullOrEmpty()) {
+                        tracks.add(FangpiTrack(
+                            id = id,
+                            title = title,
+                            artist = artist ?: "未知艺术家",
+                            detailUrl = "https://www.fangpi.net/music/$id"
+                        ))
+                    }
+                }
+                if (tracks.isNotEmpty()) break
             }
+            
+            android.util.Log.d("FangpiParser", "Found ${tracks.size} tracks")
+            
         } catch (e: Exception) {
             android.util.Log.e("FangpiParser", "Error parsing search results: ${e.message}")
         }

@@ -484,19 +484,31 @@ class MusicRepository @Inject constructor(
         return try {
             Log.d("MusicRepository", "Searching Fangpi music for: $keyword")
             val encodedKeyword = FangpiParser.encodeKeyword(keyword)
+            Log.d("MusicRepository", "Encoded keyword: $encodedKeyword")
+            
             val response = fangpiApi.searchMusic(encodedKeyword)
+            Log.d("MusicRepository", "Fangpi response code: ${response.code()}")
             
             if (response.isSuccessful) {
                 val html = response.body() ?: ""
-                val tracks = FangpiParser.parseSearchResults(html)
-                Log.d("MusicRepository", "Found ${tracks.size} Fangpi tracks")
-                tracks
+                Log.d("MusicRepository", "HTML response length: ${html.length}")
+                
+                if (html.isNotEmpty()) {
+                    val tracks = FangpiParser.parseSearchResults(html)
+                    Log.d("MusicRepository", "Found ${tracks.size} Fangpi tracks")
+                    tracks
+                } else {
+                    Log.w("MusicRepository", "Empty HTML response")
+                    emptyList()
+                }
             } else {
-                Log.e("MusicRepository", "Fangpi search error: ${response.code()}")
+                Log.e("MusicRepository", "Fangpi search error: ${response.code()} - ${response.message()}")
+                Log.e("MusicRepository", "Error body: ${response.errorBody()?.string()}")
                 emptyList()
             }
         } catch (e: Exception) {
             Log.e("MusicRepository", "Exception in searchFangpiMusic: ${e.message}")
+            e.printStackTrace()
             emptyList()
         }
     }
