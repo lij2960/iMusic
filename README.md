@@ -1,6 +1,13 @@
-# iMusic - Android 音乐播放器 v1.0.0
+# iMusic - Android 音乐播放器 v1.1.0
 
-一个功能完整的Android音乐播放器，支持本地音乐播放、歌词显示、多种播放模式、在线资源搜索等功能。
+一个功能完整的Android音乐播放器，支持本地音乐播放、歌词显示、多种播放模式、通知栏控制等功能。
+
+## ✨ 新版本特性 (v1.1.0)
+
+- 🔔 **通知栏媒体控制** - 支持通知栏显示歌曲信息和播放控制
+- 🎨 **专辑封面显示** - 通知栏和锁屏界面显示专辑封面
+- 🔄 **实时状态同步** - 播放状态和歌曲信息实时更新
+- 📱 **国产手机优化** - 完美兼容红米、小米、华为等国产手机
 
 ## 📱 应用特色
 
@@ -11,6 +18,7 @@
 - **专辑封面** - 自动显示专辑封面，支持在线搜索下载
 - **播放模式** - 顺序播放、随机播放、单曲循环
 - **音频均衡器** - 专业音频调节，多种预设模式
+- **通知栏控制** - 无需打开应用即可控制播放
 
 ### 🌐 在线功能
 - **歌词搜索** - 网易云音乐API，丰富的中文歌词资源
@@ -19,11 +27,86 @@
 
 ### 🎨 用户体验
 - **Material Design 3** - 现代化界面设计
-- **自定义进度条** - 流畅拖动，无白色边框
+- **自定义进度条** - 流畅拖动，精确控制
 - **状态缓存** - 记住播放位置、模式设置
 - **搜索功能** - 按歌名、艺术家、文件名搜索
+- **后台播放** - 支持后台和锁屏播放
 
-## 🚀 技术架构
+## 🚀 快速开始
+
+### 安装方法
+
+#### 方法1: 使用构建脚本（推荐）
+```bash
+sh ./build.sh
+```
+
+#### 方法2: 手动构建
+```bash
+# 设置JDK环境
+export JAVA_HOME=/path/to/your/jdk
+
+# 构建APK
+./gradlew assembleDebug
+
+# 安装到设备
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 首次使用
+1. 授予存储权限和网络权限
+2. 点击"导入"选择音乐目录或全盘扫描
+3. 等待扫描完成
+4. 在音乐库中选择歌曲播放
+5. 下拉通知栏即可看到媒体控制
+
+### 歌词使用
+- 将.lrc歌词文件放在音乐文件同目录
+- 确保歌词文件名与音乐文件名相同
+- 播放时自动加载歌词
+- 点击"更新歌词"按钮在线搜索
+
+### 专辑封面
+- 将封面图片放在音乐文件同目录
+- 支持cover.jpg、folder.jpg、album.jpg等文件名
+- 点击"更新封面"按钮在线搜索
+- 封面会显示在播放器、列表和通知栏
+
+## 🎯 主要功能
+
+### 音乐库
+- 显示所有导入的音乐
+- 多种排序方式（创建日期、标题、艺术家、时长）
+- 实时搜索功能
+- 歌曲删除确认
+
+### 播放器
+- 专辑封面显示
+- 实时歌词显示
+- 自定义进度条（支持流畅拖动）
+- 播放控制按钮
+- 播放模式切换
+
+### 通知栏控制
+- 显示歌曲标题和艺术家
+- 显示专辑封面
+- 播放/暂停按钮
+- 上一曲/下一曲按钮
+- 点击跳转到应用
+
+### 歌词界面
+- 全屏歌词显示
+- 当前行高亮
+- 点击跳转功能
+- 自动滚动
+
+### 均衡器
+- 5频段调节
+- 多种预设模式
+- 实时音效调节
+- 自定义设置保存
+
+## 🔧 技术架构
 
 ### 核心技术
 - **MVVM架构** - 清晰的代码结构
@@ -46,65 +129,16 @@
 - **网络权限**: 在线功能使用
 - **推荐内存**: 2GB以上
 
-## 🎯 主要界面
+## 📦 支持格式
 
-### 1. 音乐库
-- 显示所有导入的音乐
-- 支持多种排序方式（创建日期、标题、艺术家、时长）
-- 实时搜索功能
-- 歌曲删除确认
+### 音频格式
+MP3, WAV, FLAC, AAC, OGG, M4A, WMA, OPUS
 
-### 2. 播放器
-- 专辑封面显示
-- 实时歌词显示
-- 自定义进度条（支持流畅拖动）
-- 播放控制按钮
-- 播放模式切换
+### 歌词格式
+LRC (带时间戳), TXT (纯文本)
 
-### 3. 歌词界面
-- 全屏歌词显示
-- 当前行高亮
-- 点击跳转功能
-- 渐变背景效果
-
-### 4. 均衡器
-- 5频段调节
-- 多种预设模式
-- 实时音效调节
-- 自定义设置保存
-
-### 5. 在线搜索
-- 放屁网音乐搜索
-- 自动浏览器跳转
-- 下载进度显示
-
-## 🔧 安装使用
-
-### 安装方法
-```bash
-# 方法1: 直接安装APK
-adb install app-debug.apk
-
-# 方法2: 从源码构建
-./gradlew assembleDebug
-```
-
-### 首次使用
-1. 授予存储权限和网络权限
-2. 点击"导入"选择音乐目录或全盘扫描
-3. 等待扫描完成
-4. 在音乐库中选择歌曲播放
-
-### 歌词使用
-1. 将.lrc歌词文件放在音乐文件同目录
-2. 确保歌词文件名与音乐文件名相同
-3. 播放时自动加载歌词
-4. 点击"更新歌词"按钮在线搜索
-
-### 专辑封面
-1. 将封面图片放在音乐文件同目录
-2. 支持cover.jpg、folder.jpg、album.jpg等文件名
-3. 点击"更新封面"按钮在线搜索
+### 封面格式
+JPG, PNG, WEBP, BMP
 
 ## 🌐 API服务
 
@@ -112,57 +146,6 @@ adb install app-debug.apk
 - **基础URL**: https://music-api.heheda.top/
 - **歌词搜索**: `/lyric?keywords={关键词}`
 - **音乐搜索**: `/search?keywords={关键词}&type=1&limit=20`
-- **特点**: 国内优化，访问速度快，中文资源丰富
-
-### 放屁网API
-- **音乐搜索**: 集成放屁网搜索功能
-- **下载方式**: 自动跳转浏览器到Quark网盘
-- **支持格式**: 多种音频格式
-
-## 📦 支持格式
-
-### 音频格式
-- MP3, WAV, FLAC, AAC, OGG, M4A, WMA, OPUS
-
-### 歌词格式
-- LRC (带时间戳)
-- TXT (纯文本)
-
-### 封面格式
-- JPG, PNG, WEBP, BMP
-
-## 🛠️ 开发环境
-
-### 必需工具
-- **Android Studio** Hedgehog 2023.1.1+
-- **JDK** 11+
-- **Kotlin** 1.9.0+
-- **Gradle** 8.0+
-
-### 主要依赖
-```kotlin
-// UI框架
-implementation("androidx.compose.ui:ui")
-implementation("androidx.compose.material3:material3")
-
-// 音频播放
-implementation("androidx.media3:media3-exoplayer")
-implementation("androidx.media3:media3-session")
-
-// 数据库
-implementation("androidx.room:room-runtime")
-implementation("androidx.room:room-ktx")
-
-// 依赖注入
-implementation("com.google.dagger:hilt-android")
-
-// 网络请求
-implementation("com.squareup.retrofit2:retrofit")
-implementation("com.squareup.retrofit2:converter-gson")
-
-// 图片加载
-implementation("io.coil-kt:coil-compose")
-```
 
 ## 🔍 故障排除
 
@@ -170,31 +153,77 @@ implementation("io.coil-kt:coil-compose")
 - **无法播放音乐**: 检查存储权限和文件格式
 - **歌词不显示**: 确认歌词文件编码为UTF-8
 - **在线功能异常**: 检查网络连接和API状态
-- **封面不显示**: 检查图片文件格式和权限
+- **通知栏不显示**: 检查通知权限设置
 
 ### 调试命令
 ```bash
 # 查看应用日志
 adb logcat | grep iMusic
 
-# 测试API连接
-curl "https://music-api.heheda.top/search?keywords=测试&type=1&limit=5"
+# 查看通知相关日志
+adb logcat | grep MusicService
 ```
+
+## 🛠️ 开发环境
+
+### 必需工具
+- Android Studio Hedgehog 2023.1.1+
+- JDK 11+
+- Kotlin 1.9.0+
+- Gradle 8.0+
+
+### 主要依赖
+```kotlin
+// UI框架
+androidx.compose.ui
+androidx.compose.material3
+
+// 音频播放
+androidx.media3:media3-exoplayer
+androidx.media3:media3-session
+
+// 数据库
+androidx.room
+
+// 依赖注入
+com.google.dagger:hilt-android
+
+// 网络请求
+com.squareup.retrofit2
+
+// 图片加载
+io.coil-kt:coil-compose
+```
+
+## 📝 更新日志
+
+### v1.1.0 (2024-02-09)
+- ✨ 新增通知栏媒体控制功能
+- ✨ 通知栏显示歌曲信息和专辑封面
+- ✨ 支持通知栏播放控制（播放/暂停/上一曲/下一曲）
+- 🐛 修复歌词不跟随播放进度的问题
+- 🐛 修复默认封面显示问题
+- 🐛 修复播放器封面显示逻辑
+- 🔧 优化国产手机兼容性（红米、小米等）
+- 🔧 优化播放列表管理
+- 🔧 移除调试日志，提升性能
+
+### v1.0.0 (2024-01-28)
+- 🎉 首次发布
+- ✨ 本地音乐播放功能
+- ✨ 歌词显示和同步
+- ✨ 在线歌词和封面搜索
+- ✨ 音频均衡器
+- ✨ 多种播放模式
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+MIT License
 
 ## 🤝 贡献
 
 欢迎提交Issue和Pull Request来改进这个项目！
 
-## 📞 联系方式
-
-如有问题或建议，请通过以下方式联系：
-- 提交GitHub Issue
-- 发送邮件反馈
-
 ---
 
-**iMusic v1.0.0** - 让音乐更美好 🎵
+**iMusic v1.1.0** - 让音乐更美好 🎵
