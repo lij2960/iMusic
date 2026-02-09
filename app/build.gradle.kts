@@ -91,6 +91,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
     
+    // Media compat for notification
+    implementation("androidx.media:media:1.7.0")
+    
     // Audio effects for equalizer
     implementation("androidx.media3:media3-effect:1.2.0")
     

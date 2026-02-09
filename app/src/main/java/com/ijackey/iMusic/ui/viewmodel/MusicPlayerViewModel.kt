@@ -112,6 +112,7 @@ class MusicPlayerViewModel @Inject constructor(
             .build()
         
         exoPlayer.setAudioAttributes(audioAttributes, true)
+        exoPlayer.repeatMode = Player.REPEAT_MODE_ALL
         
         val trackSelector = exoPlayer.trackSelector as? DefaultTrackSelector
         trackSelector?.let { selector ->
@@ -215,57 +216,34 @@ class MusicPlayerViewModel @Inject constructor(
     }
     
     fun playSong(song: Song) {
-        val index = _playlist.value.indexOf(song)
+        val playlist = _playlist.value
+        val index = playlist.indexOf(song)
         if (index != -1) {
             _currentIndex.value = index
             _currentSong.value = song
             
-            // Diagnose audio file for high-quality playback
-            val audioInfo = AudioDiagnostics.diagnoseAudioFile(song.path)
-            AudioDiagnostics.logAudioFileInfo(audioInfo)
-            
-            // Log issues if any
-            if (audioInfo.issues.isNotEmpty()) {
-                android.util.Log.w("Player", "Audio file issues detected for ${song.title}:")
-                audioInfo.issues.forEach { issue ->
-                    android.util.Log.w("Player", "  - $issue")
-                }
-            }
-            
-            // Apply recommended settings for high-quality files
-            if (audioInfo.isHighQuality || audioInfo.isLossless) {
-                android.util.Log.d("Player", "Applying high-quality settings for ${song.title}")
-                val trackSelector = exoPlayer.trackSelector as? DefaultTrackSelector
-                trackSelector?.let { selector ->
-                    selector.parameters = selector.buildUponParameters()
-                        .setMaxAudioBitrate(Int.MAX_VALUE)
-                        .setForceHighestSupportedBitrate(true)
-                        .setPreferredAudioLanguage(null)
+            // Create MediaItems for entire playlist
+            val mediaItems = playlist.map { s ->
+                val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(s.title)
+                    .setArtist(s.artist)
+                    .setArtworkUri(s.albumArtPath?.let { android.net.Uri.parse(it) })
+                    .build()
+                
+                try {
+                    androidx.media3.common.MediaItem.Builder()
+                        .setUri(android.net.Uri.fromFile(java.io.File(s.path)))
+                        .setMediaMetadata(mediaMetadata)
+                        .build()
+                } catch (e: Exception) {
+                    androidx.media3.common.MediaItem.Builder()
+                        .setUri(s.path)
+                        .setMediaMetadata(mediaMetadata)
                         .build()
                 }
             }
             
-            // Create MediaItem with metadata for notification
-            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
-                .setTitle(song.title)
-                .setArtist(song.artist)
-                .setArtworkUri(song.albumArtPath?.let { android.net.Uri.parse(it) })
-                .build()
-            
-            val mediaItem = try {
-                androidx.media3.common.MediaItem.Builder()
-                    .setUri(android.net.Uri.fromFile(java.io.File(song.path)))
-                    .setMediaMetadata(mediaMetadata)
-                    .build()
-            } catch (e: Exception) {
-                android.util.Log.e("Player", "Error creating MediaItem from file: ${e.message}")
-                androidx.media3.common.MediaItem.Builder()
-                    .setUri(song.path)
-                    .setMediaMetadata(mediaMetadata)
-                    .build()
-            }
-            
-            exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.setMediaItems(mediaItems, index, 0)
             exoPlayer.prepare()
             exoPlayer.play()
             
@@ -286,48 +264,18 @@ class MusicPlayerViewModel @Inject constructor(
     }
     
     fun skipToNext() {
-        val currentIdx = _currentIndex.value
-        val playlist = _playlist.value
-        
-        if (playlist.isNotEmpty()) {
-            val nextIndex = when (_playMode.value) {
-                PlayMode.SEQUENTIAL -> (currentIdx + 1) % playlist.size
-                PlayMode.SHUFFLE -> {
-                    var randomIndex: Int
-                    do {
-                        randomIndex = (0 until playlist.size).random()
-                    } while (randomIndex == currentIdx && playlist.size > 1)
-                    randomIndex
-                }
-                PlayMode.REPEAT_ONE -> (currentIdx + 1) % playlist.size
-            }
-            
-            if (nextIndex < playlist.size) {
-                playSong(playlist[nextIndex])
-            }
+        if (exoPlayer.hasNextMediaItem()) {
+            exoPlayer.seekToNextMediaItem()
+        } else if (_playlist.value.isNotEmpty()) {
+            exoPlayer.seekTo(0, 0)
         }
     }
     
     fun skipToPrevious() {
-        val currentIdx = _currentIndex.value
-        val playlist = _playlist.value
-        
-        if (playlist.isNotEmpty()) {
-            val prevIndex = when (_playMode.value) {
-                PlayMode.SEQUENTIAL -> if (currentIdx > 0) currentIdx - 1 else playlist.size - 1
-                PlayMode.SHUFFLE -> {
-                    var randomIndex: Int
-                    do {
-                        randomIndex = (0 until playlist.size).random()
-                    } while (randomIndex == currentIdx && playlist.size > 1)
-                    randomIndex
-                }
-                PlayMode.REPEAT_ONE -> if (currentIdx > 0) currentIdx - 1 else playlist.size - 1
-            }
-            
-            if (prevIndex >= 0 && prevIndex < playlist.size) {
-                playSong(playlist[prevIndex])
-            }
+        if (exoPlayer.hasPreviousMediaItem()) {
+            exoPlayer.seekToPreviousMediaItem()
+        } else if (_playlist.value.isNotEmpty()) {
+            exoPlayer.seekTo(_playlist.value.size - 1, 0)
         }
     }
     
