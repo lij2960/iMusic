@@ -111,12 +111,13 @@ class MusicScanner:
             file_name = music_path.stem
             
             # 按照Android版本的优先级顺序查找封面
+            # 注意：Android版本会先检查内部目录，但macOS版本直接检查音乐文件目录
             art_files = [
-                # 1. 与音乐文件同名的封面
+                # 1. 与音乐文件同名的封面（优先级最高）
                 f"{file_name}.jpg",
                 f"{file_name}.jpeg", 
                 f"{file_name}.png",
-                # 2. 通用封面名称
+                # 2. 通用封面名称（按Android版本顺序）
                 "cover.jpg",
                 "cover.jpeg",
                 "cover.png",
@@ -130,12 +131,14 @@ class MusicScanner:
             
             for art_file in art_files:
                 art_path = directory / art_file
-                if art_path.exists():
+                if art_path.exists() and art_path.is_file():
+                    print(f"✅ Found album art: {art_path}")
                     return str(art_path)
             
+            print(f"ℹ️  No album art found for: {music_path.name}")
             return None
         except Exception as e:
-            print(f"Error finding album art: {e}")
+            print(f"❌ Error finding album art: {e}")
             return None
     
     @staticmethod

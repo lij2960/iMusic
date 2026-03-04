@@ -1,99 +1,43 @@
-"""应用图标资源（与Android版本保持一致的设计理念）"""
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
-from PyQt5.QtCore import Qt, QRect
+"""应用图标资源（使用Android版本的图标）"""
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import Qt
+from pathlib import Path
 
 
 class AppIcon:
-    """应用图标生成器"""
+    """应用图标管理器"""
+    
+    # 资源文件路径
+    RESOURCES_DIR = Path(__file__).parent
+    APP_ICON_PATH = RESOURCES_DIR / "app_icon.png"
+    DEFAULT_ALBUM_ART_PATH = RESOURCES_DIR / "default_album_art.png"
     
     @staticmethod
-    def create_app_icon(size: int = 128) -> QIcon:
-        """创建应用图标（音乐符号设计，与Android版本一致）"""
-        pixmap = QPixmap(size, size)
-        pixmap.fill(Qt.transparent)
+    def create_app_icon() -> QIcon:
+        """创建应用图标（使用Android版本的图标）"""
+        if AppIcon.APP_ICON_PATH.exists():
+            return QIcon(str(AppIcon.APP_ICON_PATH))
+        else:
+            print(f"⚠️  App icon not found: {AppIcon.APP_ICON_PATH}")
+            # 返回空图标作为后备
+            return QIcon()
+    
+    @staticmethod
+    def get_app_icon_pixmap(size: int = 200) -> QPixmap:
+        """获取应用图标的Pixmap（用于显示封面）"""
+        if AppIcon.APP_ICON_PATH.exists():
+            pixmap = QPixmap(str(AppIcon.APP_ICON_PATH))
+            if not pixmap.isNull():
+                # 缩放到指定尺寸
+                return pixmap.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # 背景圆形（与Android Material Design一致）
-        painter.setBrush(QColor(98, 0, 238))  # 紫色主题
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(0, 0, size, size)
-        
-        # 绘制音乐符号
-        painter.setPen(QColor(255, 255, 255))
-        painter.setBrush(QColor(255, 255, 255))
-        
-        # 音符杆
-        note_width = size // 20
-        note_height = size // 2
-        note_x = size // 3
-        note_y = size // 4
-        painter.drawRect(note_x, note_y, note_width, note_height)
-        
-        # 音符头
-        head_size = size // 6
-        painter.drawEllipse(
-            note_x - head_size // 2,
-            note_y + note_height - head_size // 2,
-            head_size,
-            head_size
-        )
-        
-        # 第二个音符
-        note_x2 = note_x + size // 4
-        painter.drawRect(note_x2, note_y, note_width, note_height)
-        painter.drawEllipse(
-            note_x2 - head_size // 2,
-            note_y + note_height - head_size // 2,
-            head_size,
-            head_size
-        )
-        
-        # 连接线
-        painter.drawLine(
-            note_x + note_width,
-            note_y,
-            note_x2,
-            note_y
-        )
-        
-        painter.end()
-        
-        return QIcon(pixmap)
+        print(f"⚠️  App icon pixmap not found: {AppIcon.APP_ICON_PATH}")
+        # 返回空Pixmap作为后备
+        return QPixmap(size, size)
     
     @staticmethod
     def create_default_album_art(size: int = 200) -> QPixmap:
-        """创建默认专辑封面（与Android版本一致）"""
-        pixmap = QPixmap(size, size)
-        pixmap.fill(QColor(240, 240, 240))
-        
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # 绘制音乐符号
-        painter.setPen(QColor(200, 200, 200))
-        painter.setBrush(QColor(200, 200, 200))
-        
-        # 简化的音符
-        note_size = size // 3
-        note_x = (size - note_size) // 2
-        note_y = (size - note_size) // 2
-        
-        # 音符杆
-        stem_width = note_size // 10
-        stem_height = note_size
-        painter.drawRect(note_x + note_size // 2, note_y, stem_width, stem_height)
-        
-        # 音符头
-        head_size = note_size // 2
-        painter.drawEllipse(
-            note_x,
-            note_y + stem_height - head_size,
-            head_size,
-            head_size
-        )
-        
-        painter.end()
-        
-        return pixmap
+        """创建默认专辑封面（使用Android版本的默认封面，已废弃，改用应用图标）"""
+        # 注意：根据新需求，没有封面时应该显示应用图标，而不是默认封面
+        # 保留此方法是为了兼容性，但实际应该使用 get_app_icon_pixmap()
+        return AppIcon.get_app_icon_pixmap(size)

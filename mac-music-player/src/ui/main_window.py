@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("音乐播放器")
         self.setGeometry(100, 100, 1000, 700)
         
-        # 设置应用图标（与Android版本一致的设计）
+        # 设置应用图标（使用Android版本的图标）
         self.setWindowIcon(AppIcon.create_app_icon())
         
         # 初始化组件
@@ -34,8 +34,8 @@ class MainWindow(QMainWindow):
         self.current_lyrics: Optional[Lyrics] = None
         self.current_lyric_index: int = -1
         
-        # 默认专辑封面（与Android版本一致）
-        self.default_album_art = AppIcon.create_default_album_art()
+        # 应用图标Pixmap（用于没有封面时显示）
+        self.app_icon_pixmap = AppIcon.get_app_icon_pixmap(200)
         
         # 设置播放器回调
         self.player.on_song_changed = self.on_song_changed
@@ -106,8 +106,8 @@ class MainWindow(QMainWindow):
         self.album_art_label.setFixedSize(200, 200)
         self.album_art_label.setAlignment(Qt.AlignCenter)
         self.album_art_label.setStyleSheet("border: 1px solid #ccc; background-color: #f0f0f0;")
-        # 显示默认封面（与Android版本一致）
-        self.album_art_label.setPixmap(self.default_album_art)
+        # 显示应用图标作为初始封面
+        self.album_art_label.setPixmap(self.app_icon_pixmap)
         right_layout.addWidget(self.album_art_label, alignment=Qt.AlignCenter)
         
         # 歌曲信息
@@ -264,6 +264,7 @@ class MainWindow(QMainWindow):
         self.highlight_current_song(song)
         
         # 加载专辑封面（与Android版本逻辑一致）
+        # 如果歌曲有封面，显示封面；如果没有，显示应用图标
         cover_loaded = False
         if song.album_art:
             try:
@@ -277,9 +278,9 @@ class MainWindow(QMainWindow):
                 print(f"❌ Error loading album art: {e}")
         
         if not cover_loaded:
-            # 没有封面或加载失败，显示默认封面
-            self.album_art_label.setPixmap(self.default_album_art)
-            print(f"ℹ️  Using default album art for: {song.title}")
+            # 没有封面或加载失败，显示应用图标（与Android版本逻辑一致）
+            self.album_art_label.setPixmap(self.app_icon_pixmap)
+            print(f"ℹ️  Using app icon for: {song.title}")
         
         # 加载歌词
         self.load_lyrics(song)
