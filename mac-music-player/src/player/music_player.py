@@ -11,7 +11,15 @@ class MusicPlayer:
     
     def __init__(self):
         """初始化播放器"""
-        self.instance = vlc.Instance('--no-xlib')
+        # 创建VLC实例，添加参数来抑制音频设备错误和详细日志
+        vlc_args = [
+            '--no-xlib',
+            '--quiet',  # 减少日志输出
+            '--no-video',  # 不需要视频
+            '--aout=auhal',  # 使用macOS的音频输出
+            '--verbose=0',  # 最小日志级别
+        ]
+        self.instance = vlc.Instance(' '.join(vlc_args))
         self.player = self.instance.media_player_new()
         
         self.playlist: List[Song] = []

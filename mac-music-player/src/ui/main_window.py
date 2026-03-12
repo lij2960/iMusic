@@ -280,7 +280,11 @@ class MainWindow(QMainWindow):
         if not cover_loaded:
             # 没有封面或加载失败，显示应用图标（与Android版本逻辑一致）
             self.album_art_label.setPixmap(self.app_icon_pixmap)
-            print(f"ℹ️  Using app icon for: {song.title}")
+            try:
+                print(f"ℹ️  Using app icon for: {song.title}")
+            except UnicodeEncodeError:
+                # 处理中文编码问题
+                print(f"ℹ️  Using app icon for song ID: {song.id}")
         
         # 加载歌词
         self.load_lyrics(song)
@@ -302,7 +306,10 @@ class MainWindow(QMainWindow):
             else:
                 print("Failed to parse lyrics file")
         else:
-            print(f"No lyrics file found for: {song.path}")
+            try:
+                print(f"No lyrics file found for: {song.path}")
+            except UnicodeEncodeError:
+                print(f"No lyrics file found for song ID: {song.id}")
         
         # 没有歌词
         self.current_lyrics = None

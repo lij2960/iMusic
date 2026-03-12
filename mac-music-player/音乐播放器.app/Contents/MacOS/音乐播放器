@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# 获取应用所在目录
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_DIR="${APP_DIR}/.."
+
+# 切换到项目目录
+cd "${PROJECT_DIR}"
+
+# 激活虚拟环境
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
+# 运行应用
+python3 main.py
