@@ -55,7 +55,6 @@ hooks/
 
 # Packaged Applications
 *.app/
-!iMusic_py312.app/
 
 # DMG (keep only the final one)
 *.dmg

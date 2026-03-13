@@ -124,9 +124,7 @@ ENV/
 
 # macOS Python app
 mac-music-player/*.app/
-!mac-music-player/iMusic_py312.app/
 mac-music-player/*.dmg
-!mac-music-player/iMusic-1.0.1-py312.dmg
 mac-music-player/build/
 mac-music-player/dist/
 mac-music-player/*.spec
