@@ -1,183 +1,195 @@
-# iMusic v1.1.0 - 项目完成
+# iMusic 项目状态
 
-## ✅ 项目状态
+## 📊 项目概览
 
-**版本**: 1.1.0  
-**状态**: 已完成并测试通过  
-**测试设备**: 红米手机  
-**构建状态**: ✅ 成功
+本项目包含三个版本的音乐播放器：
+- Android 版本（Kotlin）
+- macOS Python 版本（PyQt5 + VLC）
+- macOS Swift 版本（SwiftUI + AVFoundation）
 
-## 📦 项目结构
+## ✅ 完成状态
 
+### Android 版本
+- **状态**: ✅ 完成
+- **位置**: `app/`
+- **可用性**: 可以构建和运行
+
+### macOS Python 版本
+- **状态**: ✅ 完成并打包
+- **位置**: `mac-music-player/`
+- **应用**: `iMusic_py312.app` (180MB)
+- **安装包**: `iMusic-1.0.1-py312.dmg` (152MB)
+- **可用性**: 完全可用，可以分发
+
+### macOS Swift 版本
+- **状态**: ✅ 完成
+- **位置**: `macos-music-player-swift/`
+- **可用性**: 可以构建和运行
+
+## 🎯 核心功能（所有版本）
+
+- ✅ 音乐播放（多种格式）
+- ✅ 歌词显示和同步
+- ✅ 在线歌词搜索
+- ✅ 专辑封面显示
+- ✅ 多种播放模式
+- ✅ 播放状态保存
+- ✅ 排序功能
+
+## 📦 打包状态
+
+### Android
+- **方式**: Gradle
+- **输出**: APK/AAB
+- **大小**: ~10MB
+- **状态**: ✅ 可以构建
+
+### macOS Python
+- **方式**: PyInstaller
+- **输出**: .app + .dmg
+- **大小**: 180MB (app), 152MB (dmg)
+- **状态**: ✅ 已完成
+- **Python 版本**: 3.12.8
+- **关键问题已解决**:
+  - ✅ Python 3.14 兼容性问题（降级到 3.12）
+  - ✅ Qt 插件路径问题（添加运行时钩子）
+  - ✅ 数据库路径问题（使用 AppDataLocation）
+
+### macOS Swift
+- **方式**: Xcode
+- **输出**: .app
+- **大小**: ~15MB
+- **状态**: ✅ 可以构建
+
+## 📚 文档状态
+
+### 根目录
+- ✅ `README_CN.md` - 项目总览（已更新）
+- ✅ `.gitignore` - Git 忽略文件（已更新）
+- ✅ `PROJECT_STATUS.md` - 本文件
+
+### Android 版本
+- ✅ `app/README.md` - Android 版本说明
+
+### macOS Python 版本
+- ✅ `mac-music-player/README.md` - 主文档（已精简）
+- ✅ `mac-music-player/完整打包流程.md` - 打包流程
+- ✅ `mac-music-player/Python3.12打包成功.md` - 技术文档
+- ✅ `mac-music-player/DMG安装包说明.md` - DMG 说明
+- ✅ `mac-music-player/快速使用指南.md` - 使用指南
+- ✅ `mac-music-player/项目清理完成.md` - 清理记录
+
+### macOS Swift 版本
+- ✅ `macos-music-player-swift/README.md` - Swift 版本说明
+
+## 🔧 开发工具
+
+### Android
+```bash
+cd app
+./gradlew assembleRelease
+```
+
+### macOS Python
+```bash
+cd mac-music-player
+
+# 开发
+bash setup.sh
+bash run.sh
+
+# 打包
+bash setup_python312.sh
+bash create_app_py312.sh
+bash create_dmg_py312.sh
+```
+
+### macOS Swift
+```bash
+cd macos-music-player-swift
+open MusicPlayer.xcodeproj
+# 或
+bash build_release.sh
+```
+
+## 📊 代码统计
+
+### 目录结构
 ```
 iMusic/
-├── app/                          # 应用主模块
-│   ├── src/main/
-│   │   ├── java/com/ijackey/iMusic/
-│   │   │   ├── audio/           # 音频配置和诊断
-│   │   │   ├── data/            # 数据层
-│   │   │   │   ├── api/         # 网络API
-│   │   │   │   ├── database/    # Room数据库
-│   │   │   │   ├── model/       # 数据模型
-│   │   │   │   ├── parser/      # 数据解析
-│   │   │   │   └── repository/  # 数据仓库
-│   │   │   ├── di/              # 依赖注入
-│   │   │   ├── service/         # 后台服务
-│   │   │   ├── ui/              # UI层
-│   │   │   │   ├── component/   # UI组件
-│   │   │   │   ├── screen/      # 界面
-│   │   │   │   ├── theme/       # 主题
-│   │   │   │   └── viewmodel/   # ViewModel
-│   │   │   ├── MainActivity.kt
-│   │   │   └── MusicApplication.kt
-│   │   └── res/                 # 资源文件
-│   └── build.gradle.kts         # 应用构建配置
-├── gradle/                       # Gradle配置
-├── build.sh                      # 构建脚本
-├── README.md                     # 项目说明
-├── CHANGELOG.md                  # 更新日志
-└── settings.gradle.kts          # 项目设置
+├── app/                          # Android 版本
+│   ├── src/main/java/           # Kotlin 源代码
+│   └── build.gradle.kts         # 构建配置
+├── mac-music-player/            # Python 版本
+│   ├── src/                     # Python 源代码
+│   ├── iMusic_py312.app/        # 打包的应用
+│   └── iMusic-1.0.1-py312.dmg   # DMG 安装包
+├── macos-music-player-swift/    # Swift 版本
+│   ├── MusicPlayer/             # Swift 源代码
+│   └── MusicPlayer.xcodeproj    # Xcode 项目
+├── README_CN.md                 # 项目总览
+└── PROJECT_STATUS.md            # 本文件
 ```
 
-## 🎯 完整功能列表
+## 🎯 下一步计划
 
-### 核心播放功能
-- ✅ 本地音乐扫描和导入
-- ✅ 高质量音频播放（ExoPlayer）
-- ✅ 播放/暂停/上一曲/下一曲
-- ✅ 进度条拖动控制
-- ✅ 播放模式切换（顺序/随机/单曲循环）
-- ✅ 播放状态缓存
+### 短期
+- [ ] 测试所有版本的功能
+- [ ] 收集用户反馈
+- [ ] 修复发现的 bug
 
-### 歌词功能
-- ✅ LRC歌词自动加载
-- ✅ 歌词实时同步显示
-- ✅ 歌词点击跳转
-- ✅ 在线歌词搜索
-- ✅ 全屏歌词界面
+### 中期
+- [ ] 添加更多功能（播放列表、均衡器等）
+- [ ] 优化性能
+- [ ] 改进 UI/UX
 
-### 封面功能
-- ✅ 专辑封面自动显示
-- ✅ 默认封面支持
-- ✅ 在线封面搜索
-- ✅ 封面缓存
+### 长期
+- [ ] 添加云同步功能
+- [ ] 支持更多音频格式
+- [ ] 添加音乐推荐功能
 
-### 通知栏功能
-- ✅ 显示歌曲信息
-- ✅ 显示专辑封面
-- ✅ 播放控制按钮
-- ✅ 实时状态同步
-- ✅ 锁屏控制
+## 🐛 已知问题
 
-### 音乐库功能
-- ✅ 音乐列表显示
-- ✅ 多种排序方式
-- ✅ 搜索功能
-- ✅ 歌曲删除
+### Android
+- 无已知问题
 
-### 其他功能
-- ✅ 音频均衡器
-- ✅ 在线音乐搜索（放屁网）
-- ✅ Material Design 3界面
-- ✅ 自定义进度条
+### macOS Python
+- 首次运行需要右键打开（macOS 安全限制）
+- 应用体积较大（180MB，包含 Python 环境）
 
-## 🔧 技术栈
+### macOS Swift
+- 无已知问题
 
-### 前端
-- Jetpack Compose
+## 💡 技术亮点
+
+### Android
 - Material Design 3
-- Navigation Compose
-- Coil (图片加载)
+- ExoPlayer 音频引擎
+- MVVM 架构
 
-### 后端
-- ExoPlayer (音频播放)
-- Room (数据库)
-- Retrofit (网络请求)
-- Hilt (依赖注入)
-- Coroutines + Flow (异步)
+### macOS Python
+- 成功解决 Python 3.14 兼容性问题
+- 完整的打包和分发方案
+- 跨平台 API 兼容（与 Android 版本）
 
-### 服务
-- MediaSessionService
-- 前台服务
-- 通知管理
+### macOS Swift
+- SwiftUI 现代界面
+- 原生性能
+- 体积小巧
 
-## 📱 兼容性
+## 📈 项目进度
 
-- ✅ Android 7.0+ (API 24+)
-- ✅ 红米手机
-- ✅ 小米手机
-- ✅ 华为手机
-- ✅ OPPO/vivo手机
-- ✅ 原生Android
+- ✅ Android 版本开发完成
+- ✅ macOS Python 版本开发完成
+- ✅ macOS Python 版本打包完成
+- ✅ macOS Swift 版本开发完成
+- ✅ 文档整理完成
+- ✅ 项目清理完成
 
-## 🚀 构建和安装
+## 🎉 总结
 
-### 快速构建
-```bash
-sh ./build.sh
-```
+所有三个版本都已完成开发，macOS Python 版本已成功打包并可以分发。项目文档已整理完毕，代码仓库已清理干净。
 
-### 手动构建
-```bash
-export JAVA_HOME=/path/to/jdk
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
+**项目状态**: ✅ 可以投入使用
 
-## 📊 项目统计
-
-- **代码行数**: ~5000+ 行
-- **文件数量**: 30+ 个Kotlin文件
-- **依赖库**: 15+ 个主要依赖
-- **APK大小**: ~14MB
-- **最低API**: 24 (Android 7.0)
-- **目标API**: 36 (Android 14)
-
-## 🎉 项目亮点
-
-1. **完整功能**: 涵盖音乐播放器所有核心功能
-2. **现代架构**: MVVM + Compose + Hilt
-3. **高质量播放**: ExoPlayer引擎
-4. **智能歌词**: 实时同步显示
-5. **通知栏控制**: 完美兼容国产手机
-6. **在线功能**: 歌词和封面搜索
-7. **用户体验**: Material Design 3设计
-
-## 📝 文档
-
-- `README.md` - 项目说明和使用指南
-- `CHANGELOG.md` - 版本更新日志
-- `build.sh` - 自动化构建脚本
-
-## ✨ 下一步建议
-
-### 可能的改进方向
-1. 添加播放列表管理
-2. 支持更多在线音乐源
-3. 添加睡眠定时器
-4. 支持歌词编辑
-5. 添加音乐分享功能
-6. 支持主题切换
-7. 添加桌面小部件
-
-### 性能优化
-1. 优化大列表加载
-2. 图片缓存优化
-3. 内存使用优化
-4. 启动速度优化
-
-## 🎊 总结
-
-iMusic v1.1.0 是一个功能完整、架构清晰、用户体验良好的Android音乐播放器。所有核心功能已实现并测试通过，可以正式使用。
-
-**项目完成度**: 100%  
-**功能完整性**: ✅ 优秀  
-**代码质量**: ✅ 良好  
-**用户体验**: ✅ 优秀  
-**兼容性**: ✅ 优秀
-
----
-
-**开发完成日期**: 2024-02-09  
-**版本**: 1.1.0  
-**状态**: ✅ 已完成
+**最后更新**: 2026-03-13

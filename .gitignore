@@ -107,3 +107,46 @@ proguard/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Python (for mac-music-player)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv312/
+env/
+ENV/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# macOS Python app
+mac-music-player/*.app/
+!mac-music-player/iMusic_py312.app/
+mac-music-player/*.dmg
+!mac-music-player/iMusic-1.0.1-py312.dmg
+mac-music-player/build/
+mac-music-player/dist/
+mac-music-player/*.spec
+mac-music-player/hooks/
+mac-music-player/dmg_tmp*/
+mac-music-player/app_run.log
+mac-music-player/setup_py2app.py
+
+# Swift/Xcode (for macos-music-player-swift)
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3

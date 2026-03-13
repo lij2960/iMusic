@@ -22,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+venv312/
 env/
 ENV/
 
@@ -47,3 +48,21 @@ ENV/
 
 # Logs
 *.log
+
+# PyInstaller
+*.spec
+hooks/
+
+# Packaged Applications
+*.app/
+!iMusic_py312.app/
+
+# DMG (keep only the final one)
+*.dmg
+
+# Temporary files
+dmg_tmp*/
+app_run.log
+
+# Build artifacts
+setup_py2app.py
