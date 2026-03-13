@@ -1,6 +1,51 @@
 # macOS 音乐播放器 (Python版)
 
-一个基于Python和PyQt6开发的macOS音乐播放器，支持本地音乐播放、歌词显示、多种播放模式等功能。
+一个基于Python和PyQt5开发的macOS音乐播放器，支持本地音乐播放、歌词显示、多种播放模式等功能。
+
+## ✅ 打包状态
+
+**Python 3.12 打包成功！** 🎉
+
+- ✅ 应用可以正常运行
+- ✅ 所有功能正常工作
+- ✅ 数据库路径已修复
+- ✅ Qt 插件路径已修复
+- ✅ 应用大小: ~180MB
+
+详细信息请查看: [Python3.12打包成功.md](Python3.12打包成功.md)
+
+## 🚀 快速开始
+
+### 开发模式运行
+
+```bash
+# 1. 设置环境
+bash setup.sh
+
+# 2. 运行应用
+bash run.sh
+```
+
+### 打包应用（推荐）
+
+```bash
+# 使用 Python 3.12 打包
+bash create_app_py312.sh
+
+# 测试打包的应用
+bash test_final.sh
+
+# 创建 DMG 安装包
+bash create_dmg_py312.sh
+```
+
+打包后会生成：
+- `iMusic_py312.app` - 应用程序（180MB）
+- `iMusic-1.0.1-py312.dmg` - DMG 安装包（152MB）
+
+详细说明：
+- [DMG快速指南.md](DMG快速指南.md) - 快速参考
+- [DMG安装包说明.md](DMG安装包说明.md) - 详细说明
 
 ## 功能特性
 
@@ -44,10 +89,11 @@
 
 ## 技术栈
 
-- **Python 3.8+** - 主要开发语言
-- **PyQt5** - GUI框架（兼容macOS 12+）
-- **python-vlc** - 音频播放引擎（基于VLC）
-- **mutagen** - 音频元数据提取
+- **Python 3.12.8** - 主要开发语言
+- **PyQt5 5.15.10** - GUI框架（兼容macOS 12+）
+- **python-vlc 3.0.20123** - 音频播放引擎（基于VLC）
+- **mutagen 1.47.0** - 音频元数据提取
+- **PyInstaller 6.19.0** - 应用打包工具
 - **SQLite** - 本地数据存储
 
 ## 项目结构

@@ -1,11 +1,13 @@
 """主窗口UI"""
+import os
+from pathlib import Path
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QLabel, QSlider, QListWidget, QListWidgetItem,
     QFileDialog, QComboBox, QMessageBox, QDialog, QTextEdit,
     QProgressDialog, QInputDialog
 )
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QStandardPaths
 from PyQt5.QtGui import QPixmap, QIcon
 from typing import Optional
 from ..models.song import Song, PlayMode, SortOrder, Lyrics
@@ -28,8 +30,20 @@ class MainWindow(QMainWindow):
         # 设置应用图标（使用Android版本的图标）
         self.setWindowIcon(AppIcon.create_app_icon())
         
+        # 获取应用数据目录
+        app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        if not app_data_dir:
+            # 如果Qt无法获取，使用默认路径
+            app_data_dir = os.path.expanduser("~/Library/Application Support/iMusic")
+        
+        # 确保目录存在
+        Path(app_data_dir).mkdir(parents=True, exist_ok=True)
+        db_path = os.path.join(app_data_dir, "music_player.db")
+        
+        print(f"📁 数据库路径: {db_path}")
+        
         # 初始化组件
-        self.db = DatabaseManager()
+        self.db = DatabaseManager(db_path)
         self.player = MusicPlayer()
         self.current_lyrics: Optional[Lyrics] = None
         self.current_lyric_index: int = -1
