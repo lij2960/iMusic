@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QLabel, QSlider, QListWidget, QListWidgetItem,
     QFileDialog, QComboBox, QMessageBox, QDialog, QTextEdit,
-    QProgressDialog, QInputDialog
+    QProgressDialog, QInputDialog, QAbstractItemView
 )
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QStandardPaths
 from PyQt5.QtGui import QPixmap, QIcon
@@ -110,6 +110,27 @@ class MainWindow(QMainWindow):
         # 左侧：歌曲列表
         self.song_list = QListWidget()
         self.song_list.itemDoubleClicked.connect(self.on_song_double_clicked)
+        # 美化歌曲列表样式
+        self.song_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #ffffff;
+                padding: 5px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #f0f0f0;
+                border-radius: 3px;
+            }
+            QListWidget::item:hover {
+                background-color: #f5f5f5;
+            }
+            QListWidget::item:selected {
+                background-color: #e3f2fd;
+                color: #1976d2;
+            }
+        """)
         content_layout.addWidget(self.song_list, 2)
         
         # 右侧：播放器和歌词
@@ -193,6 +214,23 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(QLabel("歌词:"))
         self.lyrics_list = QListWidget()
         self.lyrics_list.itemClicked.connect(self.on_lyric_clicked)
+        # 美化歌词列表样式
+        self.lyrics_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #fafafa;
+                padding: 5px;
+                font-size: 14px;
+            }
+            QListWidget::item {
+                padding: 6px;
+                border: none;
+            }
+            QListWidget::item:hover {
+                background-color: #f0f0f0;
+            }
+        """)
         right_layout.addWidget(self.lyrics_list)
         
         content_layout.addLayout(right_layout, 1)
@@ -225,9 +263,18 @@ class MainWindow(QMainWindow):
         songs = self.db.get_all_songs(sort_order)
         
         self.song_list.clear()
-        for song in songs:
-            item = QListWidgetItem(song.get_display_name())
+        for i, song in enumerate(songs):
+            # 创建更美观的显示格式
+            display_text = f"{i+1}. {song.title}"
+            if song.artist:
+                display_text += f" - {song.artist}"
+            
+            item = QListWidgetItem(display_text)
             item.setData(Qt.UserRole, song)
+            
+            # 设置图标（可选）
+            item.setIcon(QIcon.fromTheme("audio-x-generic"))
+            
             self.song_list.addItem(item)
         
         # 更新播放器播放列表
@@ -251,8 +298,13 @@ class MainWindow(QMainWindow):
                 font = item.font()
                 font.setBold(True)
                 item.setFont(font)
-                # 添加播放图标
-                item.setText(f"▶ {item_song.get_display_name()}")
+                
+                # 创建更美观的显示格式，添加播放图标
+                display_text = f"▶ {i+1}. {item_song.title}"
+                if item_song.artist:
+                    display_text += f" - {item_song.artist}"
+                item.setText(display_text)
+                
                 # 滚动到当前歌曲
                 self.song_list.scrollToItem(item)
             else:
@@ -261,8 +313,13 @@ class MainWindow(QMainWindow):
                 font = item.font()
                 font.setBold(False)
                 item.setFont(font)
+                
                 if item_song:
-                    item.setText(item_song.get_display_name())
+                    # 恢复原始显示格式
+                    display_text = f"{i+1}. {item_song.title}"
+                    if item_song.artist:
+                        display_text += f" - {item_song.artist}"
+                    item.setText(display_text)
     
     def on_song_changed(self, song: Song):
         """歌曲改变回调"""
@@ -372,14 +429,25 @@ class MainWindow(QMainWindow):
                 self.player.next()
     
     def highlight_current_lyric(self):
-        """高亮当前歌词"""
+        """高亮当前歌词并居中显示"""
         for i in range(self.lyrics_list.count()):
             item = self.lyrics_list.item(i)
             if i == self.current_lyric_index:
+                # 当前歌词 - 蓝色粗体
                 item.setForeground(Qt.blue)
-                self.lyrics_list.scrollToItem(item)
+                font = item.font()
+                font.setBold(True)
+                font.setPointSize(15)  # 稍微放大当前歌词
+                item.setFont(font)
+                # 滚动到当前歌词，使其在窗口中央显示
+                self.lyrics_list.scrollToItem(item, QListWidget.PositionAtCenter)
             else:
-                item.setForeground(Qt.black)
+                # 其他歌词 - 默认样式
+                item.setForeground(Qt.gray)
+                font = item.font()
+                font.setBold(False)
+                font.setPointSize(13)
+                item.setFont(font)
     
     def on_lyric_clicked(self, item: QListWidgetItem):
         """点击歌词行"""
