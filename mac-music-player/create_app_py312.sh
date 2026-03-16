@@ -99,6 +99,7 @@ a = Analysis(
     binaries=vlc_binaries,
     datas=[
         ('src/resources/app_icon.png', 'resources'),
+        ('src/resources/app_icon_rounded.png', 'resources'),
     ],
     hiddenimports=[
         'PyQt5',
@@ -154,7 +155,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='iMusic.app',
-    icon='src/resources/app_icon.png',
+    icon='src/resources/app_icon.icns',
     bundle_identifier='com.ijackey.iMusic',
     version='1.0.1',
     info_plist={

@@ -15,7 +15,7 @@ from ..player.music_player import MusicPlayer
 from ..database.db_manager import DatabaseManager
 from ..utils.music_scanner import MusicScanner
 from ..utils.lyrics_parser import LyricsParser
-from ..resources.app_icon import AppIcon
+from ..resources.app_icon import AppIcon, make_rounded_pixmap
 from ..api.lyrics_api import LyricsAPI
 
 
@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.current_lyric_index: int = -1
         
         # 应用图标Pixmap（用于没有封面时显示）
-        self.app_icon_pixmap = AppIcon.get_app_icon_pixmap(200)
+        self.app_icon_pixmap = AppIcon.get_app_icon_pixmap(160)
         
         # 设置播放器回调
         self.player.on_song_changed = self.on_song_changed
@@ -138,9 +138,9 @@ class MainWindow(QMainWindow):
         
         # 专辑封面
         self.album_art_label = QLabel()
-        self.album_art_label.setFixedSize(200, 200)
+        self.album_art_label.setFixedSize(160, 160)
         self.album_art_label.setAlignment(Qt.AlignCenter)
-        self.album_art_label.setStyleSheet("border: 1px solid #ccc; background-color: #f0f0f0;")
+        self.album_art_label.setStyleSheet("border: none; background-color: transparent;")
         # 显示应用图标作为初始封面
         self.album_art_label.setPixmap(self.app_icon_pixmap)
         right_layout.addWidget(self.album_art_label, alignment=Qt.AlignCenter)
@@ -341,8 +341,8 @@ class MainWindow(QMainWindow):
             try:
                 pixmap = QPixmap(song.album_art)
                 if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.album_art_label.setPixmap(scaled_pixmap)
+                    scaled_pixmap = pixmap.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    self.album_art_label.setPixmap(make_rounded_pixmap(scaled_pixmap))
                     cover_loaded = True
                     print(f"✅ Loaded album art from: {song.album_art}")
             except Exception as e:

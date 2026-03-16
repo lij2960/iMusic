@@ -1,5 +1,5 @@
 """应用图标资源（使用Android版本的图标）"""
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QBrush, QPainterPath
 from PyQt5.QtCore import Qt
 from pathlib import Path
 import sys
@@ -16,6 +16,21 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
     
     return os.path.join(base_path, relative_path)
+
+
+def make_rounded_pixmap(pixmap: QPixmap, radius: int = 16) -> QPixmap:
+    """将 pixmap 裁剪为圆角矩形"""
+    size = pixmap.size()
+    rounded = QPixmap(size)
+    rounded.fill(Qt.transparent)
+    painter = QPainter(rounded)
+    painter.setRenderHint(QPainter.Antialiasing)
+    path = QPainterPath()
+    path.addRoundedRect(0, 0, size.width(), size.height(), radius, radius)
+    painter.setClipPath(path)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.end()
+    return rounded
 
 
 class AppIcon:
@@ -39,8 +54,8 @@ class AppIcon:
         return QIcon()
     
     @staticmethod
-    def get_app_icon_pixmap(size: int = 200) -> QPixmap:
-        """获取应用图标的Pixmap（用于显示封面）"""
+    def get_app_icon_pixmap(size: int = 160) -> QPixmap:
+        """获取应用图标的Pixmap（用于显示封面，带圆角）"""
         # 尝试多个可能的路径
         possible_paths = [
             get_resource_path("resources/app_icon.png"),
@@ -52,12 +67,13 @@ class AppIcon:
             if os.path.exists(icon_path):
                 pixmap = QPixmap(icon_path)
                 if not pixmap.isNull():
-                    return pixmap.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    scaled = pixmap.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    return make_rounded_pixmap(scaled)
         
-        # 返回灰色占位图
+        # 返回灰色圆角占位图
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.gray)
-        return pixmap
+        return make_rounded_pixmap(pixmap)
     
     @staticmethod
     def create_default_album_art(size: int = 200) -> QPixmap:
