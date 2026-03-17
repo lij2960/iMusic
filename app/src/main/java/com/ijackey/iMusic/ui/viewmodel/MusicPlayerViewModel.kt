@@ -17,6 +17,7 @@ import com.ijackey.iMusic.data.model.EqualizerPreset
 import com.ijackey.iMusic.data.api.FangpiTrack
 import com.ijackey.iMusic.data.repository.MusicRepository
 import com.ijackey.iMusic.audio.AudioDiagnostics
+import com.ijackey.iMusic.audio.WmaConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -129,20 +130,25 @@ class MusicPlayerViewModel @Inject constructor(
             
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 mediaItem?.let { item ->
-                    // 使用文件路径比较而不是URI字符串比较
-                    val itemUri = item.localConfiguration?.uri
-                    val song = _playlist.value.find { song ->
-                        try {
-                            val songUri = android.net.Uri.fromFile(java.io.File(song.path))
-                            songUri == itemUri
-                        } catch (e: Exception) {
-                            song.path == itemUri.toString()
+                    // 优先用 mediaId（原始路径）匹配，兼容 WMA 转换后 URI 变化的情况
+                    val mediaId = item.mediaId
+                    val song = if (mediaId.isNotEmpty()) {
+                        _playlist.value.find { it.path == mediaId }
+                    } else {
+                        // 降级：用 URI 匹配
+                        val itemUri = item.localConfiguration?.uri
+                        _playlist.value.find { song ->
+                            try {
+                                android.net.Uri.fromFile(java.io.File(song.path)) == itemUri
+                            } catch (e: Exception) {
+                                song.path == itemUri.toString()
+                            }
                         }
                     }
-                    _currentSong.value = song
-                    song?.let { 
-                        saveLastPlayedSong(it)
-                        updateCurrentIndex(it)
+                    if (song != null) {
+                        _currentSong.value = song
+                        saveLastPlayedSong(song)
+                        updateCurrentIndex(song)
                     }
                 }
             }
@@ -161,18 +167,39 @@ class MusicPlayerViewModel @Inject constructor(
                 android.util.Log.e("Player", "Error code: ${error.errorCode}")
                 android.util.Log.e("Player", "Cause: ${error.cause?.message}")
                 
-                // Diagnose the current song if there's an error
-                _currentSong.value?.let { song ->
-                    android.util.Log.e("Player", "Error playing: ${song.title} (${song.path})")
-                    val audioInfo = AudioDiagnostics.diagnoseAudioFile(song.path)
-                    AudioDiagnostics.logAudioFileInfo(audioInfo)
-                    
-                    if (audioInfo.issues.isNotEmpty()) {
-                        android.util.Log.e("Player", "File issues that may cause playback problems:")
-                        audioInfo.issues.forEach { issue ->
-                            android.util.Log.e("Player", "  - $issue")
+                val song = _currentSong.value
+                if (song != null && WmaConverter.needsConversion(song.path)) {
+                    // WMA 等格式播放失败，尝试转换后重新播放
+                    android.util.Log.d("Player", "Unsupported format, trying FFmpeg conversion: ${song.path}")
+                    viewModelScope.launch {
+                        val converted = WmaConverter.convertToAac(context, song.path)
+                        if (converted != null) {
+                            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                                .setTitle(song.title)
+                                .setArtist(song.artist)
+                                .setArtworkUri(song.albumArtPath?.let { android.net.Uri.parse(it) })
+                                .build()
+                            val mediaItem = androidx.media3.common.MediaItem.Builder()
+                                .setMediaId(song.path)  // 原始路径作为 mediaId
+                                .setUri(android.net.Uri.fromFile(java.io.File(converted)))
+                                .setMediaMetadata(mediaMetadata)
+                                .build()
+                            exoPlayer.setMediaItem(mediaItem)
+                            exoPlayer.prepare()
+                            exoPlayer.play()
+                        } else {
+                            android.util.Log.e("Player", "Conversion failed, skipping to next")
+                            skipToNext()
                         }
                     }
+                    return
+                }
+                
+                // Diagnose the current song if there's an error
+                song?.let {
+                    android.util.Log.e("Player", "Error playing: ${it.title} (${it.path})")
+                    val audioInfo = AudioDiagnostics.diagnoseAudioFile(it.path)
+                    AudioDiagnostics.logAudioFileInfo(audioInfo)
                 }
                 
                 // Try to skip to next song
@@ -219,35 +246,48 @@ class MusicPlayerViewModel @Inject constructor(
         val playlist = _playlist.value
         val index = playlist.indexOf(song)
         if (index != -1) {
+            // 立即更新 UI 状态，不等待转换完成
             _currentIndex.value = index
             _currentSong.value = song
-            
-            // Create MediaItems for entire playlist
-            val mediaItems = playlist.map { s ->
-                val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
-                    .setTitle(s.title)
-                    .setArtist(s.artist)
-                    .setArtworkUri(s.albumArtPath?.let { android.net.Uri.parse(it) })
-                    .build()
-                
-                try {
-                    androidx.media3.common.MediaItem.Builder()
-                        .setUri(android.net.Uri.fromFile(java.io.File(s.path)))
-                        .setMediaMetadata(mediaMetadata)
-                        .build()
-                } catch (e: Exception) {
-                    androidx.media3.common.MediaItem.Builder()
-                        .setUri(s.path)
-                        .setMediaMetadata(mediaMetadata)
-                        .build()
-                }
-            }
-            
-            exoPlayer.setMediaItems(mediaItems, index, 0)
-            exoPlayer.prepare()
-            exoPlayer.play()
-            
             saveLastPlayedSong(song)
+
+            viewModelScope.launch {
+                // 如果是 WMA 等不支持的格式，先转换为 AAC
+                val playPath = if (WmaConverter.needsConversion(song.path)) {
+                    android.util.Log.d("ViewModel", "WMA detected, converting: ${song.path}")
+                    WmaConverter.convertToAac(context, song.path) ?: song.path
+                } else {
+                    song.path
+                }
+
+                // Build MediaItems，当前歌曲使用转换后的路径，其余保持原路径
+                val mediaItems = playlist.mapIndexed { i, s ->
+                    val actualPath = if (i == index) playPath else s.path
+                    val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                        .setTitle(s.title)
+                        .setArtist(s.artist)
+                        .setArtworkUri(s.albumArtPath?.let { android.net.Uri.parse(it) })
+                        .build()
+
+                    try {
+                        androidx.media3.common.MediaItem.Builder()
+                            .setMediaId(s.path)  // 用原始路径作为 mediaId，方便 transition 回调匹配
+                            .setUri(android.net.Uri.fromFile(java.io.File(actualPath)))
+                            .setMediaMetadata(mediaMetadata)
+                            .build()
+                    } catch (e: Exception) {
+                        androidx.media3.common.MediaItem.Builder()
+                            .setMediaId(s.path)
+                            .setUri(actualPath)
+                            .setMediaMetadata(mediaMetadata)
+                            .build()
+                    }
+                }
+
+                exoPlayer.setMediaItems(mediaItems, index, 0)
+                exoPlayer.prepare()
+                exoPlayer.play()
+            }
         }
     }
     
@@ -553,10 +593,16 @@ class MusicPlayerViewModel @Inject constructor(
                         
                         // Fix URI creation for last song restoration
                         val mediaItem = try {
-                            MediaItem.fromUri(android.net.Uri.fromFile(java.io.File(lastSong.path)))
+                            MediaItem.Builder()
+                                .setMediaId(lastSong.path)
+                                .setUri(android.net.Uri.fromFile(java.io.File(lastSong.path)))
+                                .build()
                         } catch (e: Exception) {
                             android.util.Log.e("ViewModel", "Error creating MediaItem for last song: ${e.message}")
-                            MediaItem.fromUri(lastSong.path)
+                            MediaItem.Builder()
+                                .setMediaId(lastSong.path)
+                                .setUri(lastSong.path)
+                                .build()
                         }
                         
                         exoPlayer.setMediaItem(mediaItem)

@@ -69,6 +69,9 @@ dependencies {
     implementation("androidx.media3:media3-datasource:1.2.0")
     implementation("androidx.media3:media3-common:1.2.0")
     
+    // FFmpeg kit for WMA and other unsupported formats
+    implementation("com.arthenica:ffmpeg-kit-audio:6.0-2")
+    
     // Room database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
