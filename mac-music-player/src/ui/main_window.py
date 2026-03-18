@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QLabel, QSlider, QListWidget, QListWidgetItem,
     QFileDialog, QComboBox, QMessageBox, QDialog, QTextEdit,
-    QProgressDialog, QInputDialog, QAbstractItemView
+    QProgressDialog, QInputDialog, QAbstractItemView, QLineEdit
 )
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QStandardPaths
 from PyQt5.QtGui import QPixmap, QIcon
@@ -100,6 +100,14 @@ class MainWindow(QMainWindow):
         self.combo_play_mode.addItems(["列表循环", "单曲循环", "随机播放"])
         self.combo_play_mode.currentIndexChanged.connect(self.on_play_mode_changed)
         top_layout.addWidget(self.combo_play_mode)
+        
+        # 搜索框
+        top_layout.addWidget(QLabel("搜索:"))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("歌曲名/艺术家...")
+        self.search_input.setMaximumWidth(200)
+        self.search_input.textChanged.connect(self.on_search_changed)
+        top_layout.addWidget(self.search_input)
         
         top_layout.addStretch()
         main_layout.addLayout(top_layout)
@@ -258,9 +266,19 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "完成", f"已添加 {len(songs)} 首歌曲")
     
     def refresh_song_list(self):
-        """刷新歌曲列表"""
+        """刷新歌曲列表（支持搜索过滤）"""
         sort_order = self.get_current_sort_order()
-        songs = self.db.get_all_songs(sort_order)
+        all_songs = self.db.get_all_songs(sort_order)
+        
+        # 搜索过滤
+        search_text = self.search_input.text().strip().lower()
+        if search_text:
+            songs = [
+                song for song in all_songs
+                if search_text in song.title.lower() or search_text in song.artist.lower()
+            ]
+        else:
+            songs = all_songs
         
         self.song_list.clear()
         for i, song in enumerate(songs):
@@ -277,8 +295,8 @@ class MainWindow(QMainWindow):
             
             self.song_list.addItem(item)
         
-        # 更新播放器播放列表
-        self.player.set_playlist(songs)
+        # 更新播放器播放列表（用全部歌曲，不受搜索影响）
+        self.player.set_playlist(all_songs)
     
     def on_song_double_clicked(self, item: QListWidgetItem):
         """双击歌曲项"""
@@ -482,6 +500,10 @@ class MainWindow(QMainWindow):
     
     def on_sort_changed(self, index: int):
         """排序改变"""
+        self.refresh_song_list()
+    
+    def on_search_changed(self, text: str):
+        """搜索文本改变"""
         self.refresh_song_list()
     
     def on_play_mode_changed(self, index: int):

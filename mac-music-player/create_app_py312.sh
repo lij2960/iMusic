@@ -16,6 +16,16 @@ echo "=========================================="
 # 切换到脚本所在目录
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+# 🧹 清理所有缓存和旧文件
+echo ""
+echo "🧹 清理缓存和旧文件..."
+rm -rf build dist "${APP_NAME}_py312.app" "${APP_NAME}.spec" hooks
+rm -rf __pycache__ src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
+rm -rf .pytest_cache .mypy_cache
+rm -rf ~/Library/Application\ Support/pyinstaller
+echo "✅ 清理完成"
+echo ""
+
 # 检查VLC
 if [ ! -d "${VLC_LIB_PATH}" ]; then
     echo "❌ 错误：未找到VLC库"
@@ -42,10 +52,6 @@ source venv312/bin/activate
 PYTHON_VERSION=$(python3 --version)
 echo "Python版本: ${PYTHON_VERSION}"
 echo ""
-
-# 清理之前的构建
-echo "🧹 清理之前的构建..."
-rm -rf build dist "${APP_NAME}.app" "${APP_NAME}.spec"
 
 # 创建运行时钩子来设置Qt插件路径
 echo ""
@@ -196,7 +202,7 @@ if [ -d "dist/${APP_NAME}.app" ]; then
     
     # 清理构建文件
     echo "🧹 清理构建文件..."
-    rm -rf build dist "${APP_NAME}.spec"
+    rm -rf build dist "${APP_NAME}.spec" hooks
     
     echo ""
     echo "=========================================="
